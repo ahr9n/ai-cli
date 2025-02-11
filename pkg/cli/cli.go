@@ -66,6 +66,30 @@ func runChat(opts *ChatOptions, args []string) error {
 	return handleSinglePrompt(client, prompt, opts)
 }
 
+func handleSinglePrompt(client *ollama.Client, prompt string, opts *ChatOptions) error {
+	messages := []ollama.Message{
+		{
+			Role:    "user",
+			Content: prompt,
+		},
+	}
+
+	fmt.Print("thinking...")
+
+	response, err := client.CreateChatCompletion(messages, &ollama.ChatOptions{
+		Model:       opts.Model,
+		Temperature: opts.Temperature,
+	})
+
+	if err != nil {
+		return fmt.Errorf("chat completion failed: %w", err)
+	}
+
+	fmt.Print("\r\033[K")
+	fmt.Println(response)
+	return nil
+}
+
 func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 	fmt.Println("Starting interactive chat mode (type 'exit' to quit)")
 	fmt.Println("Model:", opts.Model)
@@ -89,44 +113,32 @@ func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 			Content: input,
 		})
 
-		response, err := client.CreateChatCompletion(messages, &ollama.ChatOptions{
+		fmt.Print("\nthinking...")
+
+		var response strings.Builder
+		err := client.StreamChatCompletion(messages, &ollama.ChatOptions{
 			Model:       opts.Model,
 			Temperature: opts.Temperature,
+		}, func(chunk string) {
+			if response.Len() == 0 {
+				fmt.Print("\r\033[K")
+				fmt.Print("\nAssistant: ")
+			}
+			fmt.Print(chunk)
+			response.WriteString(chunk)
 		})
 
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			fmt.Printf("\nError: %v\n", err)
 			continue
 		}
+		fmt.Println()
 
 		messages = append(messages, ollama.Message{
 			Role:    "assistant",
-			Content: response,
+			Content: response.String(),
 		})
-
-		fmt.Printf("\nAssistant: %s\n", response)
 	}
 
-	return nil
-}
-
-func handleSinglePrompt(client *ollama.Client, prompt string, opts *ChatOptions) error {
-	messages := []ollama.Message{
-		{
-			Role:    "user",
-			Content: prompt,
-		},
-	}
-
-	response, err := client.CreateChatCompletion(messages, &ollama.ChatOptions{
-		Model:       opts.Model,
-		Temperature: opts.Temperature,
-	})
-
-	if err != nil {
-		return fmt.Errorf("chat completion failed: %w", err)
-	}
-
-	fmt.Println(response)
 	return nil
 }
