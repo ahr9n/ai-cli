@@ -1,10 +1,10 @@
 .PHONY: build run test
 
 build:
-	go build -o bin/ollama-cli cmd/ollama-cli/main.go
+	go build -o ollama-cli cmd/ollama-cli/main.go
 
 run:
-	./bin/ollama-cli
+	./ollama-cli
 
 test:
 	go test ./test/...
