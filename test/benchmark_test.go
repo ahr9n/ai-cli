@@ -8,10 +8,10 @@ import (
 )
 
 func BenchmarkCreateChatCompletion(b *testing.B) {
-	server := utils.SetupTestServer()
+	server := utils.NewTestServer(utils.CreateSuccessHandler(utils.MockResponses.ModelsList))
 	defer server.Close()
 
-	client := utils.SetupTestClient(server.URL)
+	client := utils.NewTestClient(server.URL)
 	messages := []ollama.Message{{Role: "user", Content: "test"}}
 	opts := &ollama.ChatOptions{Model: "test", Temperature: 0.7}
 

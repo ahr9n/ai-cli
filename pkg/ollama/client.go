@@ -53,6 +53,10 @@ func NewClient(cfg *config.Config) *Client {
 }
 
 func (c *Client) StreamChatCompletion(messages []Message, opts *ChatOptions, onResponse func(string)) error {
+	if len(messages) == 0 {
+		return fmt.Errorf("no messages provided")
+	}
+	
 	prompt := messages[len(messages)-1].Content
 
 	reqBody := generateRequest{
