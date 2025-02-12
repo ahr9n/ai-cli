@@ -81,9 +81,12 @@ func (c *Client) StreamChatCompletion(messages []Message, opts *ChatOptions, onR
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("model '%s' not found - try running: ollama pull %s", opts.Model, opts.Model)
+	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("request failed (status %d): %s", resp.StatusCode, string(body))
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
