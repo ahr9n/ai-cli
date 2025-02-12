@@ -6,9 +6,30 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ahr9n/ollama-cli/pkg/config"
 	"github.com/ahr9n/ollama-cli/pkg/ollama"
 	"github.com/ahr9n/ollama-cli/pkg/prompts"
 )
+
+func runChat(opts *ChatOptions, args []string) error {
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+
+	client := ollama.NewClient(cfg)
+
+	if opts.Interactive {
+		return runInteractiveMode(client, opts)
+	}
+
+	if len(args) == 0 {
+		return fmt.Errorf("please provide a prompt or use -i for interactive mode")
+	}
+
+	prompt := strings.Join(args, " ")
+	return handleSinglePrompt(client, prompt, opts)
+}
 
 func handleSinglePrompt(client *ollama.Client, prompt string, opts *ChatOptions) error {
 	messages := []ollama.Message{
