@@ -14,7 +14,7 @@ A simple command-line interface for interacting with [Ollama](https://ollama.ai/
 
 Before using this CLI, make sure you have:
 
-1. Go 1.21 or later installed
+1. Go 1.24 or later installed
 2. [Ollama](https://ollama.ai/) installed and running
 3. At least one model pulled (e.g., `ollama pull deepseek-r1:1.5b`)
 
@@ -22,14 +22,14 @@ Before using this CLI, make sure you have:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ollama-cli
+git clone https://github.com/ahr9n/ollama-cli
 cd ollama-cli
 
 # Install dependencies
 go mod download
 
 # Build the binary
-go build -o ollama-cli cmd/ollama-cli/main.go
+make build
 ```
 
 ## Usage
@@ -71,6 +71,8 @@ Flags:
 
 ```
 ollama-cli/
+├── Makefile
+├── README.md
 ├── cmd/
 │   └── ollama-cli/
 │       └── main.go          # Entry point
@@ -81,8 +83,53 @@ ollama-cli/
 │   │   └── config.go       # Configuration handling
 │   ├── ollama/
 │   │   └── client.go       # Ollama API client
-│   └── prompts/
-│       └── prompts.go      # Prompt management
-├── go.mod
-└── README.md
+│   ├── prompts/
+│   │   └── prompts.go      # Prompt management
+│   └── utils/
+│       └── loader.go       # Loading animation utilities
+└── test/
+    ├── utils/
+    │   └── server.go       # Test utilities and mocks
+    ├── benchmark_test.go   # Performance benchmarks
+    ├── cli_test.go        # CLI tests
+    ├── config_test.go     # Configuration tests
+    ├── ollama_test.go     # Client tests
+    └── prompts_test.go    # Prompts tests
 ```
+
+## Development
+
+### Available Make Commands
+
+```bash
+make build    # Build the binary
+make run      # Run the CLI
+make test     # Run tests
+make format   # Format code using go fmt
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run specific tests
+go test ./test/...
+
+# Run benchmarks
+go test -bench=. ./test/...
+```
+
+### Project Organization
+
+- `cmd/`: Contains the main application entry point
+- `pkg/`: Contains the core packages:
+  - `cli/`: Command-line interface implementation using Cobra
+  - `config/`: Configuration management
+  - `ollama/`: Ollama API client implementation
+  - `prompts/`: System prompts management
+  - `utils/`: Utility functions and helpers
+- `test/`: Contains all tests:
+  - `utils/`: Shared test utilities and mocks
+  - Various test files for each package
