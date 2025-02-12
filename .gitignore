@@ -8,3 +8,4 @@ dist/
 *.dylib
 *.test
 *.out
+ollama-cli
