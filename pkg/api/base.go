@@ -34,6 +34,20 @@ func (c *BaseClient) DoPost(path string, payload interface{}) (*http.Response, e
 	return resp, nil
 }
 
+func (c *BaseClient) DoGet(path string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", c.BaseURL, path), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+
+	return resp, nil
+}
+
 func (c *BaseClient) HandleError(resp *http.Response) error {
 	if resp.StatusCode == http.StatusNotFound {
 		return fmt.Errorf("resource not found")

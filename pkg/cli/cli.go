@@ -15,6 +15,13 @@ import (
 var (
 	Version = "0.1.0"
 )
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Version: %s\n", Version)
+	},
+}
 
 type ChatOptions struct {
 	Interactive bool
@@ -49,13 +56,9 @@ Before using, make sure to:
 	flags.StringVarP(&opts.Model, "model", "m", "deepseek-r1:1.5b", "Model to use (deepseek-r1:1.5b, llama2, mistral, etc.)")
 	flags.Float32VarP(&opts.Temperature, "temperature", "t", 0.7, "Sampling temperature (0.0-2.0)")
 
-	cmd.AddCommand(&cobra.Command{
-		Use:   "version",
-		Short: "Print version information",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Version: %s\n", Version)
-		},
-	})
+	cmd.AddCommand(versionCmd)
+	cmd.AddCommand(newModelsCommand())
+
 	return cmd
 }
 
