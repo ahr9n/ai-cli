@@ -2,13 +2,12 @@ package ollama
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
+	"github.com/ahr9n/ollama-cli/pkg/api"
 	"github.com/ahr9n/ollama-cli/pkg/config"
 	"github.com/ahr9n/ollama-cli/pkg/prompts"
 )
@@ -24,8 +23,7 @@ type ChatOptions struct {
 }
 
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
+	*api.BaseClient
 }
 
 type generateRequest struct {
@@ -45,9 +43,11 @@ type generateResponse struct {
 
 func NewClient(cfg *config.Config) *Client {
 	return &Client{
-		baseURL: cfg.OllamaURL,
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+		BaseClient: &api.BaseClient{
+			BaseURL: cfg.OllamaURL,
+			HTTPClient: &http.Client{
+				Timeout: 30 * time.Second,
+			},
 		},
 	}
 }
@@ -63,30 +63,18 @@ func (c *Client) StreamChatCompletion(messages []Message, opts *ChatOptions, onR
 		Stream:      true,
 	}
 
-	jsonData, err := json.Marshal(reqBody)
+	resp, err := c.DoPost("api/generate", reqBody)
 	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", c.baseURL+"/api/generate", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return fmt.Errorf("model '%s' not found - try running: ollama pull %s", opts.Model, opts.Model)
 	}
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed (status %d): %s", resp.StatusCode, string(body))
+
+	if err := c.HandleError(resp); err != nil {
+		return err
 	}
 
 	scanner := bufio.NewScanner(resp.Body)

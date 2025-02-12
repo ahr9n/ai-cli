@@ -8,6 +8,7 @@ import (
 
 	"github.com/ahr9n/ollama-cli/pkg/config"
 	"github.com/ahr9n/ollama-cli/pkg/ollama"
+	"github.com/ahr9n/ollama-cli/pkg/prompts"
 	"github.com/spf13/cobra"
 )
 
@@ -37,6 +38,7 @@ Before using, make sure to:
 		Example: `  ollama-cli "What is the capital of France?"
   ollama-cli -i  # Start interactive mode
   ollama-cli --model mistral "Explain quantum computing"`,
+		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runChat(opts, args)
 		},
@@ -120,7 +122,7 @@ func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 		}
 
 		messages = append(messages, ollama.Message{
-			Role:    "user",
+			Role:    prompts.RoleUser,
 			Content: input,
 		})
 
@@ -146,7 +148,7 @@ func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 		fmt.Println()
 
 		messages = append(messages, ollama.Message{
-			Role:    "assistant",
+			Role:    prompts.RoleAssistant,
 			Content: response.String(),
 		})
 	}

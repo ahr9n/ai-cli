@@ -1,20 +1,20 @@
 .PHONY: build run test clean install format
 
 build:
-	go build -o bin/ollama-cli cmd/ollama-cli/main.go
+	go build -o ollama-cli cmd/ollama-cli/main.go
 
 run: build
-	./bin/ollama-cli
+	./ollama-cli
 
 test:
 	go test -v ./test/...
 
 clean:
-	rm -f bin/ollama-cli
+	rm -f ollama-cli
 	go clean
 
 install: build
-	mv bin/ollama-cli $(GOPATH)/bin/ollama-cli
+	mv ollama-cli $(GOPATH)/ollama-cli
 
 format:
 	go fmt ./...
