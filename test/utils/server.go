@@ -9,11 +9,11 @@ import (
 )
 
 var MockResponses = struct {
-	SuccessfulChat string
-	ModelsList     string
-	ModelNotFound  string
-	InvalidJSON    string
-	InternalError  string
+	SuccessfulChat  string
+	ModelsList      string
+	ModelNotFound   string
+	InvalidJSON     string
+	InternalError   string
 	EmptyModelsList string
 }{
 	SuccessfulChat: `{"response": "Test response", "done": true}`,

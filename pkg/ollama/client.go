@@ -56,7 +56,7 @@ func (c *Client) StreamChatCompletion(messages []Message, opts *ChatOptions, onR
 	if len(messages) == 0 {
 		return fmt.Errorf("no messages provided")
 	}
-	
+
 	prompt := messages[len(messages)-1].Content
 
 	reqBody := generateRequest{

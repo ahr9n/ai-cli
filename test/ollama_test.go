@@ -17,7 +17,6 @@ func TestNewClient(t *testing.T) {
 	assert.NotNil(t, client)
 }
 
-
 func TestListModels_Success(t *testing.T) {
 	server := utils.NewTestServer(utils.CreateSuccessHandler(utils.MockResponses.ModelsList))
 	defer server.Close()
