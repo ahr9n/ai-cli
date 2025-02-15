@@ -1,5 +1,11 @@
 package prompts
 
+const (
+	RoleSystem    = "system"
+	RoleUser      = "user"
+	RoleAssistant = "assistant"
+)
+
 func DefaultSystem() string {
 	return "You are a helpful assistant. Provide clear, direct & short responses."
 }
@@ -15,9 +21,3 @@ func ConciseSystem() string {
 func CodeSystem() string {
 	return "You are a coding assistant. Focus on providing clean, well-documented code examples."
 }
-
-const (
-	RoleSystem    = "system"
-	RoleUser      = "user"
-	RoleAssistant = "assistant"
-)

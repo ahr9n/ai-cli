@@ -1,74 +1,80 @@
-# Ollama CLI
+# AI CLI
 
-A simple command-line interface for interacting with [Ollama](https://ollama.ai/) language models.
+A command-line interface for interacting with various AI providers and models.
 
 ## Features
 
+- Multiple AI provider support:
+  - Ollama (local LLM runtime)
+  - LocalAI (self-hosted AI model server)
 - Interactive chat mode
 - Single prompt mode
-- Model management (list available models)
-- Support for different models (deepseek-r1:1.5b, llama2, mistral, etc.)
-- Configurable temperature for response generation
-- Simple and clean interface
+- Model management
+- Provider-specific configurations
+- Stream responses in real-time
 
 ## Prerequisites
 
-Before using this CLI, make sure you have:
-
-1. Go 1.23.4 or later installed
-2. [Ollama](https://ollama.ai/) installed and running
-3. At least one model pulled (e.g., `ollama pull deepseek-r1:1.5b`)
+- Go 1.24 or later
+- At least one AI provider:
+  - [Ollama](https://ollama.ai/) or
+  - [LocalAI](https://github.com/go-skynet/LocalAI)
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/ahr9n/ollama-cli
-cd ollama-cli
+git clone https://github.com/yourusername/ai-cli
+cd ai-cli
 
 # Install dependencies
 go mod download
 
-# Build the binary
-make build
-
-# Install
+# Build and install
 make install
 ```
 
 ## Usage
 
+```bash
+# List available providers
+ai-cli providers
+
+# Use Ollama
+ai-cli ollama "What is the capital of France?"
+ai-cli ollama -i  # Interactive mode
+ai-cli ollama --model mistral "Explain quantum computing"
+
+# Use LocalAI
+ai-cli localai "What is the capital of France?"
+ai-cli localai -i --model gpt-3.5-turbo
+
+# Set default provider
+ai-cli default set ollama
+ai-cli default set localai --url http://custom:8080
+
+# Show current default
+ai-cli default show
+
+# Clear default
+ai-cli default clear
 ```
-Usage:
-  ollama-cli [prompt] [flags]
-  ollama-cli [command]
 
-Available Commands:
-  completion  Generate the autocompletion script for the specified shell
-  help        Help about any command
-  models      List available models
+### Available Commands
+```
+Commands:
+  ollama      Use Ollama provider
+  localai     Use LocalAI provider
+  default     Manage default provider settings
+  providers   List available providers
   version     Print version information
+  help        Help about any command
 
-Flags:
-  -h, --help                  help for ollama-cli
-  -i, --interactive           Start interactive chat mode
-  -m, --model string          Model to use (deepseek-r1:1.5b, llama2, mistral, etc.) (default "deepseek-r1:1.5b")
-  -t, --temperature float32   Sampling temperature (0.0-2.0) (default 0.7)
-
-Examples:
-  -> Single Prompt Mode
-  ollama-cli "What is the capital of France?" # Using the default model (deepseek-r1:1.5b)
-  ollama-cli --model mistral "Explain quantum computing" # Using a different model
-  ollama-cli --temperature 0.9 "Write a creative story" # Adjusting temperature
-
-  -> Start interactive mode
-  ollama-cli -i # Start interactive chat
-  ollama-cli -i --model llama2 # Start interactive chat with specific model
-
-  -> Model Management
-  ollama-cli models # List all available models
-
-Use "ollama-cli [command] --help" for more information about a command.
+Common Flags:
+  -i, --interactive        Start interactive chat mode
+  -m, --model string      Model to use (provider-specific)
+  -t, --temperature float Temperature for response generation (default 0.7)
+      --url string        Provider API URL (optional)
 ```
 
 ## Development
@@ -79,3 +85,38 @@ make run      # Run the CLI
 make test     # Run tests
 make format   # Format code
 ```
+
+## Project Structure
+
+```
+ai-cli/
+├── cmd/
+│   └── main.go          # Entry point
+├── pkg/
+│   ├── api/            
+│   │   └── base.go      # Base HTTP client
+│   ├── cli/             # CLI commands
+│   │   ├── chat.go
+│   │   ├── provider.go
+│   │   ├── root.go
+│   │   └── version.go
+│   ├── provider/        # Provider implementations
+│   │   ├── provider.go
+│   │   ├── localai/
+│   │   └── ollama/
+│   ├── prompts/         # System prompts
+│   └── utils/           # Utilities
+└── test/                # Tests
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Run tests and format code
+4. Push your changes
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

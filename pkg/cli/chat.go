@@ -6,21 +6,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ahr9n/ollama-cli/pkg/client/ollama"
-	"github.com/ahr9n/ollama-cli/pkg/config"
 	"github.com/ahr9n/ollama-cli/pkg/prompts"
+	"github.com/ahr9n/ollama-cli/pkg/provider"
 )
 
-func runChat(opts *ChatOptions, args []string) error {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
-
-	client := ollama.NewClient(cfg)
-
+func runChat(p provider.Provider, opts *ChatOptions, args []string) error {
 	if opts.Interactive {
-		return runInteractiveMode(client, opts)
+		return runInteractiveMode(p, opts)
 	}
 
 	if len(args) == 0 {
@@ -28,11 +20,11 @@ func runChat(opts *ChatOptions, args []string) error {
 	}
 
 	prompt := strings.Join(args, " ")
-	return handleSinglePrompt(client, prompt, opts)
+	return handleSinglePrompt(p, prompt, opts)
 }
 
-func handleSinglePrompt(client *ollama.Client, prompt string, opts *ChatOptions) error {
-	messages := []ollama.Message{
+func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) error {
+	messages := []provider.Message{
 		{
 			Role:    prompts.RoleUser,
 			Content: prompt,
@@ -41,7 +33,7 @@ func handleSinglePrompt(client *ollama.Client, prompt string, opts *ChatOptions)
 
 	fmt.Print("thinking...")
 
-	response, err := client.CreateChatCompletion(messages, &ollama.ChatOptions{
+	response, err := p.CreateCompletion(messages, &provider.CompletionOptions{
 		Model:       opts.Model,
 		Temperature: opts.Temperature,
 	})
@@ -50,17 +42,17 @@ func handleSinglePrompt(client *ollama.Client, prompt string, opts *ChatOptions)
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
-	fmt.Print("\r\033[K")
+	fmt.Print("\r\033[K") // Clear the thinking... text
 	fmt.Println(response)
 	return nil
 }
 
-func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
-	fmt.Println("Starting interactive chat mode (type 'exit' to quit)")
-	fmt.Println("Model:", opts.Model)
+func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
+	fmt.Printf("Starting interactive chat mode with %s (type 'exit' to quit)\n", p.Name())
+	fmt.Printf("Model: %s\n", opts.Model)
 
+	var messages []provider.Message
 	scanner := bufio.NewScanner(os.Stdin)
-	messages := []ollama.Message{}
 
 	for {
 		fmt.Print("\nYou: ")
@@ -73,7 +65,7 @@ func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 			break
 		}
 
-		messages = append(messages, ollama.Message{
+		messages = append(messages, provider.Message{
 			Role:    prompts.RoleUser,
 			Content: input,
 		})
@@ -81,12 +73,12 @@ func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 		fmt.Print("\nthinking...")
 
 		var response strings.Builder
-		err := client.StreamChatCompletion(messages, &ollama.ChatOptions{
+		err := p.StreamCompletion(messages, &provider.CompletionOptions{
 			Model:       opts.Model,
 			Temperature: opts.Temperature,
 		}, func(chunk string) {
 			if response.Len() == 0 {
-				fmt.Print("\r\033[K")
+				fmt.Print("\r\033[K") // Clear the thinking... text
 				fmt.Print("\nAssistant: ")
 			}
 			fmt.Print(chunk)
@@ -99,11 +91,22 @@ func runInteractiveMode(client *ollama.Client, opts *ChatOptions) error {
 		}
 		fmt.Println()
 
-		messages = append(messages, ollama.Message{
+		messages = append(messages, provider.Message{
 			Role:    prompts.RoleAssistant,
 			Content: response.String(),
 		})
 	}
 
 	return nil
+}
+
+func readUserInput() (string, error) {
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", err
+		}
+		return "", fmt.Errorf("failed to read input")
+	}
+	return scanner.Text(), nil
 }
