@@ -1,7 +1,7 @@
 .PHONY: build run test clean install format
 
 build:
-	go build -o ollama-cli cmd/ollama-cli/main.go
+	go build -o ollama-cli cmd/main.go
 
 run: build
 	./ollama-cli

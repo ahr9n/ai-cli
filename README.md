@@ -31,6 +31,9 @@ go mod download
 
 # Build the binary
 make build
+
+# Install
+make install
 ```
 
 ## Usage
@@ -54,18 +57,18 @@ Flags:
 
 Examples:
   -> Single Prompt Mode
-  ./ollama-cli "What is the capital of France?" # Using the default model (deepseek-r1:1.5b)
-  ./ollama-cli --model mistral "Explain quantum computing" # Using a different model
-  ./ollama-cli --temperature 0.9 "Write a creative story" # Adjusting temperature
+  ollama-cli "What is the capital of France?" # Using the default model (deepseek-r1:1.5b)
+  ollama-cli --model mistral "Explain quantum computing" # Using a different model
+  ollama-cli --temperature 0.9 "Write a creative story" # Adjusting temperature
 
   -> Start interactive mode
-  ./ollama-cli -i # Start interactive chat
-  ./ollama-cli -i --model llama2 # Start interactive chat with specific model
+  ollama-cli -i # Start interactive chat
+  ollama-cli -i --model llama2 # Start interactive chat with specific model
 
   -> Model Management
-  ./ollama-cli models # List all available models
+  ollama-cli models # List all available models
 
-Use "./ollama-cli [command] --help" for more information about a command.
+Use "ollama-cli [command] --help" for more information about a command.
 ```
 
 ## Development
