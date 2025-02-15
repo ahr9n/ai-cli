@@ -2,19 +2,39 @@ package cli
 
 import (
 	"fmt"
-
 	"github.com/ahr9n/ollama-cli/pkg/provider"
-	"github.com/ahr9n/ollama-cli/pkg/provider/localai"
-	"github.com/ahr9n/ollama-cli/pkg/provider/ollama"
 	"github.com/spf13/cobra"
 )
+
+func AvailableProvidersList() []struct {
+	Type        provider.ProviderType
+	Name        string
+	Description string
+} {
+	return []struct {
+		Type        provider.ProviderType
+		Name        string
+		Description string
+	}{
+		{
+			Type:        provider.Ollama,
+			Name:        "Ollama",
+			Description: "Run large language models locally",
+		},
+		{
+			Type:        provider.LocalAI,
+			Name:        "LocalAI",
+			Description: "Self-hosted AI model server compatible with OpenAI's API",
+		},
+	}
+}
 
 func listProvidersCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "providers",
 		Short: "List available AI providers",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			providers := ListAvailableProviders()
+			providers := AvailableProvidersList()
 
 			fmt.Println("Available Providers:")
 			fmt.Println("--------------------")
@@ -103,27 +123,4 @@ func newLocalAICommand() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.ProviderURL, "url", "u", provider.DefaultURLs[provider.Ollama], "Provider API URL (optional)")
 
 	return cmd
-}
-
-func ListAvailableProviders() []struct {
-	Type        provider.ProviderType
-	Name        string
-	Description string
-} {
-	return []struct {
-		Type        provider.ProviderType
-		Name        string
-		Description string
-	}{
-		{
-			Type:        provider.Ollama,
-			Name:        "Ollama",
-			Description: "Run large language models locally",
-		},
-		{
-			Type:        provider.LocalAI,
-			Name:        "LocalAI",
-			Description: "Self-hosted AI model server compatible with OpenAI's API",
-		},
-	}
 }

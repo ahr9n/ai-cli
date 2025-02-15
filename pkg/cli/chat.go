@@ -42,7 +42,7 @@ func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) e
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
-	fmt.Print("\r\033[K") // Clear the thinking... text
+	fmt.Print("\r\033[K")
 	fmt.Println(response)
 	return nil
 }
@@ -78,7 +78,7 @@ func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
 			Temperature: opts.Temperature,
 		}, func(chunk string) {
 			if response.Len() == 0 {
-				fmt.Print("\r\033[K") // Clear the thinking... text
+				fmt.Print("\r\033[K")
 				fmt.Print("\nAssistant: ")
 			}
 			fmt.Print(chunk)
