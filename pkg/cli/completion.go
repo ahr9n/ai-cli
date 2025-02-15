@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ahr9n/ollama-cli/pkg/client/ollama"
 	"github.com/ahr9n/ollama-cli/pkg/config"
-	"github.com/ahr9n/ollama-cli/pkg/ollama"
 	"github.com/ahr9n/ollama-cli/pkg/prompts"
 )
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ahr9n/ollama-cli/pkg/ollama"
+	"github.com/ahr9n/ollama-cli/pkg/client/ollama"
 	"github.com/ahr9n/ollama-cli/test/utils"
 	"github.com/stretchr/testify/assert"
 )
