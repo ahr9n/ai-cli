@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ahr9n/ollama-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/pkg/provider"
 	"github.com/spf13/cobra"
 )
 

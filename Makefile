@@ -1,10 +1,10 @@
 .PHONY: build run test clean install format
 
 build:
-	go build -o bin/ai-cli cmd/main.go
+	go build -o ai-cli cmd/main.go
 
 run: build
-	./bin/ai-cli
+	./ai-cli
 
 test:
 	go test -v ./test/...
@@ -14,7 +14,7 @@ clean:
 	go clean
 
 install: build
-	mv bin/ai-cli $(GOPATH)/bin/ai-cli
+	mv ai-cli $(GOPATH)/ai-cli
 
 format:
 	go fmt ./...

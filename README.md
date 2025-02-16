@@ -15,8 +15,10 @@ A command-line interface for interacting with various AI providers and models.
 
 ## Prerequisites
 
-- Go 1.24 or later
-- At least one AI provider:
+Before using this CLI, make sure you have:
+
+1. Go 1.24 or later installed
+2. Install & run at least one AI provider:
   - [Ollama](https://ollama.ai/) or
   - [LocalAI](https://github.com/go-skynet/LocalAI)
 
@@ -24,7 +26,7 @@ A command-line interface for interacting with various AI providers and models.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ai-cli
+git clone https://github.com/ahr9n/ai-cli
 cd ai-cli
 
 # Install dependencies
@@ -41,12 +43,12 @@ make install
 ai-cli providers
 
 # Use Ollama
-ai-cli ollama "What is the capital of France?"
+ai-cli ollama "What is the capital of Palestine?"
 ai-cli ollama -i  # Interactive mode
 ai-cli ollama --model mistral "Explain quantum computing"
 
 # Use LocalAI
-ai-cli localai "What is the capital of France?"
+ai-cli localai "What is the capital of Palestine?"
 ai-cli localai -i --model gpt-3.5-turbo
 
 # Set default provider
@@ -63,18 +65,18 @@ ai-cli default clear
 ### Available Commands
 ```
 Commands:
+  version     Print version information
+  providers   List available providers
   ollama      Use Ollama provider
   localai     Use LocalAI provider
   default     Manage default provider settings
-  providers   List available providers
-  version     Print version information
   help        Help about any command
 
 Common Flags:
   -i, --interactive        Start interactive chat mode
   -m, --model string      Model to use (provider-specific)
   -t, --temperature float Temperature for response generation (default 0.7)
-      --url string        Provider API URL (optional)
+  -u, --url string        Provider API URL (optional)
 ```
 
 ## Development
@@ -85,38 +87,3 @@ make run      # Run the CLI
 make test     # Run tests
 make format   # Format code
 ```
-
-## Project Structure
-
-```
-ai-cli/
-├── cmd/
-│   └── main.go          # Entry point
-├── pkg/
-│   ├── api/            
-│   │   └── base.go      # Base HTTP client
-│   ├── cli/             # CLI commands
-│   │   ├── chat.go
-│   │   ├── provider.go
-│   │   ├── root.go
-│   │   └── version.go
-│   ├── provider/        # Provider implementations
-│   │   ├── provider.go
-│   │   ├── localai/
-│   │   └── ollama/
-│   ├── prompts/         # System prompts
-│   └── utils/           # Utilities
-└── test/                # Tests
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Run tests and format code
-4. Push your changes
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.

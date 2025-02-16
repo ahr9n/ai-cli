@@ -2,7 +2,10 @@ package cli
 
 import (
 	"fmt"
-	"github.com/ahr9n/ollama-cli/pkg/provider"
+
+	"github.com/ahr9n/ai-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/pkg/provider/localai"
+	"github.com/ahr9n/ai-cli/pkg/provider/ollama"
 	"github.com/spf13/cobra"
 )
 
@@ -78,7 +81,7 @@ func newOllamaCommand() *cobra.Command {
 		Use:   "ollama [prompt]",
 		Short: "Use Ollama provider",
 		Long:  `Use Ollama to run large language models locally`,
-		Example: `  ai-cli ollama "What is the capital of France?"
+		Example: `  ai-cli ollama "What is the capital of Palestine?"
   ai-cli ollama -i  # Start interactive mode
   ai-cli ollama --model mistral "Write a story"`,
 		Args: cobra.ArbitraryArgs,
@@ -105,7 +108,7 @@ func newLocalAICommand() *cobra.Command {
 		Use:   "localai [prompt]",
 		Short: "Use LocalAI provider",
 		Long:  `Use LocalAI self-hosted model server`,
-		Example: `  ai-cli localai "What is the capital of France?"
+		Example: `  ai-cli localai "What is the capital of Palestine?"
   ai-cli localai -i  # Start interactive mode
   ai-cli localai --model gpt-3.5-turbo "Write a story"`,
 		Args: cobra.ArbitraryArgs,

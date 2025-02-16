@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ahr9n/ollama-cli/pkg/prompts"
-	"github.com/ahr9n/ollama-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/pkg/prompts"
+	"github.com/ahr9n/ai-cli/pkg/provider"
 )
 
 func runChat(p provider.Provider, opts *ChatOptions, args []string) error {
@@ -98,15 +98,4 @@ func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
 	}
 
 	return nil
-}
-
-func readUserInput() (string, error) {
-	scanner := bufio.NewScanner(os.Stdin)
-	if !scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return "", err
-		}
-		return "", fmt.Errorf("failed to read input")
-	}
-	return scanner.Text(), nil
 }

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ahr9n/ollama-cli/pkg/api"
-	"github.com/ahr9n/ollama-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/pkg/api"
+	"github.com/ahr9n/ai-cli/pkg/provider"
 )
 
 type Client struct {
