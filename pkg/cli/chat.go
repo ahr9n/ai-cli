@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ahr9n/ai-cli/pkg/prompts"
 	"github.com/ahr9n/ai-cli/pkg/provider"
@@ -32,8 +33,11 @@ func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) e
 		},
 	}
 
-	loader := utils.NewLoader()
+	loader := utils.NewLoader(utils.Dots)
 	loader.Start()
+
+	time.Sleep(2 * time.Second)
+	loader.SetMessage("Generating the answer")
 
 	response, err := p.CreateCompletion(messages, &provider.CompletionOptions{
 		Model:       opts.Model,
