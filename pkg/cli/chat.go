@@ -8,6 +8,7 @@ import (
 
 	"github.com/ahr9n/ai-cli/pkg/prompts"
 	"github.com/ahr9n/ai-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/pkg/utils"
 )
 
 func runChat(p provider.Provider, opts *ChatOptions, args []string) error {
@@ -31,7 +32,8 @@ func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) e
 		},
 	}
 
-	fmt.Print("thinking...")
+	loader := utils.NewLoader()
+	loader.Start()
 
 	response, err := p.CreateCompletion(messages, &provider.CompletionOptions{
 		Model:       opts.Model,
@@ -42,8 +44,9 @@ func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) e
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
-	fmt.Print("\r\033[K")
+	loader.Stop()
 	fmt.Println(response)
+
 	return nil
 }
 
@@ -70,15 +73,12 @@ func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
 			Content: input,
 		})
 
-		fmt.Print("\nthinking...")
-
 		var response strings.Builder
 		err := p.StreamCompletion(messages, &provider.CompletionOptions{
 			Model:       opts.Model,
 			Temperature: opts.Temperature,
 		}, func(chunk string) {
 			if response.Len() == 0 {
-				fmt.Print("\r\033[K")
 				fmt.Print("\nAssistant: ")
 			}
 			fmt.Print(chunk)

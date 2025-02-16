@@ -27,7 +27,7 @@ func (l *Loader) Start() {
 	l.mu.Unlock()
 
 	go func() {
-		frames := []string{"thinking", "thinking.", "thinking..", "thinking..."}
+		frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 		ticker := time.NewTicker(250 * time.Millisecond)
 		defer ticker.Stop()
 
@@ -36,10 +36,10 @@ func (l *Loader) Start() {
 		for {
 			select {
 			case <-l.stop:
-				fmt.Print("\r\033[K")
 				return
 			case <-ticker.C:
-				fmt.Printf("\r%s", frames[i%len(frames)])
+				fmt.Print("\r\033[K")
+				fmt.Printf("thinking %s", frames[i%len(frames)])
 				i++
 			}
 		}
@@ -53,4 +53,5 @@ func (l *Loader) Stop() {
 		close(l.stop)
 	}
 	l.mu.Unlock()
+	fmt.Print("\r\033[K")
 }
