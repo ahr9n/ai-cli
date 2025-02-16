@@ -45,6 +45,7 @@ func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) e
 	})
 
 	if err != nil {
+		loader.Stop()
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
