@@ -44,12 +44,11 @@ func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) e
 		Temperature: opts.Temperature,
 	})
 
+	loader.Stop()
 	if err != nil {
-		loader.Stop()
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
-	loader.Stop()
 	fmt.Println(response)
 
 	return nil
