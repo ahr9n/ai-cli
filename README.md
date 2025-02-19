@@ -44,14 +44,14 @@ ai-cli providers
 
 # Use Ollama
 ai-cli ollama "What is the capital of Palestine?"
-ai-cli ollama -i  # Interactive mode
+ai-cli ollama -i  # Interactive mode [with the default model]
 ai-cli ollama --model mistral "Explain quantum computing"
 
 # Use LocalAI
 ai-cli localai "What is the capital of Palestine?"
-ai-cli localai -i --model gpt-3.5-turbo
+ai-cli localai -i --model gpt-3.5-turbo # Interactive mode [with a certain model]
 
-# Set default provider
+# Set default provider and base URL
 ai-cli default set ollama
 ai-cli default set localai --url http://custom:8080
 
@@ -73,7 +73,7 @@ Commands:
   help        Help about any command
 
 Common Flags:
-  -i, --interactive        Start interactive chat mode
+  -i, --interactive       Start interactive chat mode
   -m, --model string      Model to use (provider-specific)
   -t, --temperature float Temperature for response generation (default 0.7)
   -u, --url string        Provider API URL (optional)
