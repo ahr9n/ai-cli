@@ -77,6 +77,7 @@ Common Flags:
   -m, --model string      Model to use (provider-specific)
   -t, --temperature float Temperature for response generation (default 0.7)
   -u, --url string        Provider API URL (optional)
+      --list-models       List available models
 ```
 
 ## Development
