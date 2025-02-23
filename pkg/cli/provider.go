@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/ahr9n/ai-cli/pkg/provider"
 	"github.com/ahr9n/ai-cli/pkg/provider/localai"
@@ -72,6 +74,7 @@ func addCommonFlags(cmd *cobra.Command, opts *ChatOptions) {
 	flags := cmd.Flags()
 	flags.BoolVarP(&opts.Interactive, "interactive", "i", false, "Start interactive chat mode")
 	flags.Float32VarP(&opts.Temperature, "temperature", "t", 0.7, "Sampling temperature (0.0-2.0)")
+	flags.BoolVar(&opts.ListModels, "list-models", false, "List available models")
 }
 
 func newOllamaCommand() *cobra.Command {
@@ -84,11 +87,13 @@ func newOllamaCommand() *cobra.Command {
 		Example: `  ai-cli ollama "What is the capital of Palestine?"
   ai-cli ollama -i  # Start interactive mode
   ai-cli ollama --model mistral "Write a story"`,
-		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			p, err := NewProvider(provider.Ollama, opts.ProviderURL)
 			if err != nil {
 				return err
+			}
+			if opts.ListModels {
+				return displayModels(p)
 			}
 			return runChat(p, opts, args)
 		},
@@ -117,6 +122,9 @@ func newLocalAICommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if opts.ListModels {
+				return displayModels(p)
+			}
 			return runChat(p, opts, args)
 		},
 	}
@@ -126,4 +134,49 @@ func newLocalAICommand() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.ProviderURL, "url", "u", provider.DefaultURLs[provider.Ollama], "Provider API URL (optional)")
 
 	return cmd
+}
+
+func displayModels(p provider.Provider) error {
+	models, err := p.ListModels()
+	if err != nil {
+		return fmt.Errorf("failed to list models: %w", err)
+	}
+
+	if len(models) == 0 {
+		fmt.Printf("No models found for %s\n", p.Name())
+		return nil
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintf(w, "Available models for %s:\n\n", p.Name())
+	fmt.Fprintln(w, "NAME\tSIZE\tFAMILY\tMODIFIED")
+	fmt.Fprintln(w, "----\t----\t------\t--------")
+
+	for _, model := range models {
+		size := formatSize(model.Size)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			model.Name,
+			size,
+			model.Family,
+			model.Modified,
+		)
+	}
+	return w.Flush()
+}
+
+func formatSize(bytes int64) string {
+	if bytes == 0 {
+		return "-"
+	}
+
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }

@@ -9,6 +9,7 @@ type ChatOptions struct {
 	Model       string
 	Temperature float32
 	ProviderURL string
+	ListModels  bool
 }
 
 func NewRootCommand() *cobra.Command {

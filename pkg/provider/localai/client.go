@@ -41,6 +41,9 @@ type modelInfo struct {
 	Status      string `json:"status"`
 	Description string `json:"description"`
 }
+type listModelsResponse struct {
+	Data []modelInfo `json:"data"`
+}
 
 func NewClient(baseURL string) provider.Provider {
 	return &Client{
@@ -112,7 +115,7 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 func (c *Client) ListModels() ([]provider.ModelInfo, error) {
 	resp, err := c.DoGet("v1/models")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list models: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -120,21 +123,21 @@ func (c *Client) ListModels() ([]provider.ModelInfo, error) {
 		return nil, err
 	}
 
-	var models []modelInfo
-	if err := json.NewDecoder(resp.Body).Decode(&models); err != nil {
-		return nil, fmt.Errorf("failed to decode models: %w", err)
+	var response listModelsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	result := make([]provider.ModelInfo, len(models))
-	for i, m := range models {
-		result[i] = provider.ModelInfo{
+	models := make([]provider.ModelInfo, len(response.Data))
+	for i, m := range response.Data {
+		models[i] = provider.ModelInfo{
 			Name:        m.ID,
 			Family:      m.Object,
 			Description: m.Description,
 		}
 	}
 
-	return result, nil
+	return models, nil
 }
 
 func (c *Client) GetDefaultModel() string {
