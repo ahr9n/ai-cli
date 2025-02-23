@@ -46,10 +46,12 @@ ai-cli providers
 ai-cli ollama "What is the capital of Palestine?"
 ai-cli ollama -i  # Interactive mode [with the default model]
 ai-cli ollama --model mistral "Explain quantum computing"
+ai-cli ollama --list-models
 
 # Use LocalAI
 ai-cli localai "What is the capital of Palestine?"
 ai-cli localai -i --model gpt-3.5-turbo # Interactive mode [with a certain model]
+ai-cli localai --list-models
 
 # Set default provider and base URL
 ai-cli default set ollama
