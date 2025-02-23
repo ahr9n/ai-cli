@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/ahr9n/ollama-cli/pkg/cli"
+	"github.com/ahr9n/ai-cli/pkg/cli"
 )
 
 func main() {

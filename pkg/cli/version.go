@@ -10,14 +10,12 @@ var (
 	Version = "0.1.0"
 )
 
-func newVersionCommand() *cobra.Command {
-	cmd := &cobra.Command{
+func versionCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Version: %s\n", Version)
+			fmt.Printf("ai-cli version %s\n", Version)
 		},
 	}
-
-	return cmd
 }
