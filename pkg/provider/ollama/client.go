@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ahr9n/ai-cli/pkg/api"
+	"github.com/ahr9n/ai-cli/pkg/prompts"
 	"github.com/ahr9n/ai-cli/pkg/provider"
 )
 
@@ -16,11 +17,17 @@ type Client struct {
 }
 
 type generateRequest struct {
-	Model       string  `json:"model"`
-	Prompt      string  `json:"prompt"`
-	Temperature float32 `json:"temperature"`
-	Stream      bool    `json:"stream"`
-	System      string  `json:"system"`
+	Model       string    `json:"model"`
+	Prompt      string    `json:"prompt"`
+	Temperature float32   `json:"temperature"`
+	Stream      bool      `json:"stream"`
+	System      string    `json:"system,omitempty"`
+	Messages    []Message `json:"messages,omitempty"`
+}
+
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
 type generateResponse struct {
@@ -43,7 +50,7 @@ func NewClient(baseURL string) provider.Provider {
 		BaseClient: &api.BaseClient{
 			BaseURL: baseURL,
 			HTTPClient: &http.Client{
-				Timeout: 30 * time.Second,
+				Timeout: 60 * time.Second,
 			},
 		},
 	}
@@ -62,9 +69,31 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 		return fmt.Errorf("no messages provided")
 	}
 
+	var systemPrompt string
+	var ollamaMessages []Message
+	var userPrompt string
+	for _, msg := range messages {
+		if msg.Role == prompts.RoleSystem {
+			systemPrompt = msg.Content
+		} else {
+			ollamaMessages = append(ollamaMessages, Message{
+				Role:    msg.Role,
+				Content: msg.Content,
+			})
+		}
+	}
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role == prompts.RoleUser {
+			userPrompt = messages[i].Content
+			break
+		}
+	}
+
 	reqBody := generateRequest{
 		Model:       opts.Model,
-		Prompt:      messages[len(messages)-1].Content,
+		Prompt:      userPrompt,
+		System:      systemPrompt,
+		Messages:    ollamaMessages,
 		Temperature: opts.Temperature,
 		Stream:      true,
 	}
@@ -85,8 +114,13 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
 		var response generateResponse
-		if err := json.Unmarshal(scanner.Bytes(), &response); err != nil {
+		if err := json.Unmarshal(line, &response); err != nil {
 			continue
 		}
 
@@ -95,7 +129,11 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 		}
 	}
 
-	return scanner.Err()
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading stream: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) ListModels() ([]provider.ModelInfo, error) {
