@@ -15,6 +15,34 @@ type defaultConfig struct {
 	ProviderURL string `json:"provider_url,omitempty"`
 }
 
+func HandleDefaultProvider(rootCmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return rootCmd.Help()
+	}
+
+	config, err := loadDefaultConfig()
+	if err != nil || config.Provider == "" {
+		return rootCmd.Help()
+	}
+
+	var providerCmd *cobra.Command
+	switch config.Provider {
+	case string(provider.Ollama):
+		providerCmd = newOllamaCommand()
+	case string(provider.LocalAI):
+		providerCmd = newLocalAICommand()
+	default:
+		return fmt.Errorf("unknown default provider type: %s", config.Provider)
+	}
+
+	if providerCmd != nil {
+		providerCmd.SetArgs(args)
+		return providerCmd.Execute()
+	}
+
+	return rootCmd.Help()
+}
+
 func newDefaultCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "default",

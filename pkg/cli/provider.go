@@ -75,6 +75,9 @@ func addCommonFlags(cmd *cobra.Command, opts *ChatOptions) {
 	flags.BoolVarP(&opts.Interactive, "interactive", "i", false, "Start interactive chat mode")
 	flags.Float32VarP(&opts.Temperature, "temperature", "t", 0.7, "Sampling temperature (0.0-2.0)")
 	flags.BoolVar(&opts.ListModels, "list-models", false, "List available models")
+	flags.StringVarP(&opts.SystemPrompt, "system", "s", "", "System prompt to set the assistant's behavior")
+	flags.IntVarP(&opts.MaxHistory, "max-history", "", 20, "Maximum conversation history to keep (0 = unlimited)")
+	flags.StringVarP(&opts.PresetPrompt, "preset", "p", "", "Use a preset system prompt (creative, concise, code)")
 }
 
 func newOllamaCommand() *cobra.Command {
@@ -86,7 +89,8 @@ func newOllamaCommand() *cobra.Command {
 		Long:  `Use Ollama to run large language models locally`,
 		Example: `  ai-cli ollama "What is the capital of Palestine?"
   ai-cli ollama -i  # Start interactive mode
-  ai-cli ollama --model mistral "Write a story"`,
+  ai-cli ollama --model mistral "Write a story"
+  ai-cli ollama -p creative "Tell me a short story"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			p, err := NewProvider(provider.Ollama, opts.ProviderURL)
 			if err != nil {
@@ -95,6 +99,8 @@ func newOllamaCommand() *cobra.Command {
 			if opts.ListModels {
 				return displayModels(p)
 			}
+			resolveSystemPrompt(opts)
+
 			return runChat(p, opts, args)
 		},
 	}
@@ -115,7 +121,8 @@ func newLocalAICommand() *cobra.Command {
 		Long:  `Use LocalAI self-hosted model server`,
 		Example: `  ai-cli localai "What is the capital of Palestine?"
   ai-cli localai -i  # Start interactive mode
-  ai-cli localai --model gpt-3.5-turbo "Write a story"`,
+  ai-cli localai --model gpt-3.5-turbo "Write a story"
+  ai-cli localai -p code "Explain binary search"`,
 		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			p, err := NewProvider(provider.LocalAI, opts.ProviderURL)
@@ -125,13 +132,15 @@ func newLocalAICommand() *cobra.Command {
 			if opts.ListModels {
 				return displayModels(p)
 			}
+			resolveSystemPrompt(opts)
+
 			return runChat(p, opts, args)
 		},
 	}
 
 	addCommonFlags(cmd, opts)
 	cmd.Flags().StringVarP(&opts.Model, "model", "m", "gpt-3.5-turbo", "Model to use")
-	cmd.Flags().StringVarP(&opts.ProviderURL, "url", "u", provider.DefaultURLs[provider.Ollama], "Provider API URL (optional)")
+	cmd.Flags().StringVarP(&opts.ProviderURL, "url", "u", provider.DefaultURLs[provider.LocalAI], "Provider API URL (optional)")
 
 	return cmd
 }

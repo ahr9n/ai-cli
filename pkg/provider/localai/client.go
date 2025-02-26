@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -25,6 +26,14 @@ type completionRequest struct {
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+}
+
+type streamingResponse struct {
+	Choices []struct {
+		Delta struct {
+			Content string `json:"content"`
+		} `json:"delta"`
+	} `json:"choices"`
 }
 
 type completionResponse struct {
@@ -50,7 +59,7 @@ func NewClient(baseURL string) provider.Provider {
 		BaseClient: &api.BaseClient{
 			BaseURL: baseURL,
 			HTTPClient: &http.Client{
-				Timeout: 30 * time.Second,
+				Timeout: 60 * time.Second, // Increased timeout
 			},
 		},
 	}
@@ -95,21 +104,61 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
+	// Increase scanner buffer to 10MB (default is 64KB)
+	const maxScanTokenSize = 10 * 1024 * 1024
+	scanBuf := make([]byte, maxScanTokenSize)
+	scanner.Buffer(scanBuf, maxScanTokenSize)
+
 	for scanner.Scan() {
-		var response completionResponse
-		if err := json.Unmarshal(scanner.Bytes(), &response); err != nil {
+		line := scanner.Text()
+
+		// Skip empty lines
+		if line == "" {
 			continue
 		}
 
-		if len(response.Choices) > 0 {
-			content := response.Choices[0].Message.Content
+		// Skip "data: " prefix if present (SSE format)
+		if len(line) > 6 && line[0:6] == "data: " {
+			line = line[6:]
+		}
+
+		// Skip "[DONE]" message
+		if line == "[DONE]" {
+			continue
+		}
+
+		var streamResp streamingResponse
+		if err := json.Unmarshal([]byte(line), &streamResp); err != nil {
+			// Try parsing as non-streaming response
+			var response completionResponse
+			if err := json.Unmarshal([]byte(line), &response); err != nil {
+				continue // Skip lines we can't parse
+			}
+
+			// Handle non-streaming response
+			if len(response.Choices) > 0 {
+				content := response.Choices[0].Message.Content
+				if content != "" {
+					onResponse(content)
+				}
+			}
+			continue
+		}
+
+		// Handle streaming response
+		if len(streamResp.Choices) > 0 {
+			content := streamResp.Choices[0].Delta.Content
 			if content != "" {
 				onResponse(content)
 			}
 		}
 	}
 
-	return scanner.Err()
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading stream: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) ListModels() ([]provider.ModelInfo, error) {
@@ -123,9 +172,19 @@ func (c *Client) ListModels() ([]provider.ModelInfo, error) {
 		return nil, err
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
 	var response listModelsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	if err := json.Unmarshal(body, &response); err != nil {
+		// Try to parse as array if object parsing fails
+		var altResponse []modelInfo
+		if altErr := json.Unmarshal(body, &altResponse); altErr != nil {
+			return nil, fmt.Errorf("failed to decode response: %w", err)
+		}
+		response.Data = altResponse
 	}
 
 	models := make([]provider.ModelInfo, len(response.Data))

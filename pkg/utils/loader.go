@@ -29,11 +29,18 @@ type Loader struct {
 	style   SpinnerStyle
 }
 
-func NewLoader(style SpinnerStyle) *Loader {
-	return &Loader{
+func InitLoader(style SpinnerStyle) *Loader {
+	loader := &Loader{
 		stop:  make(chan struct{}),
 		style: style,
 	}
+	time.Sleep(500 * time.Millisecond)
+	loader.Start()
+	time.Sleep(500 * time.Millisecond)
+	loader.SetMessage("Generating the answer")
+	time.Sleep(500 * time.Millisecond)
+
+	return loader
 }
 
 func (l *Loader) SetMessage(message string) {
