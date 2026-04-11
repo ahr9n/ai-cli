@@ -17,6 +17,7 @@ type ChatOptions struct {
 	SystemPrompt string
 	MaxHistory   int
 	PresetPrompt string
+	Output       string // "text" or "json"
 }
 
 func NewRootCommand() *cobra.Command {
@@ -34,6 +35,7 @@ Supports both single prompt and interactive conversations.`,
 		versionCommand(),
 		listProvidersCommand(),
 		newDefaultCommand(),
+		completionCommand(),
 	)
 
 	for _, info := range provider.All() {

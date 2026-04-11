@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 )
@@ -50,6 +53,56 @@ func TestReadStdinEmptyPipe(t *testing.T) {
 	got := readStdin(r)
 	if got != "" {
 		t.Errorf("readStdin() = %q, want empty", got)
+	}
+}
+
+func TestEmitJSON(t *testing.T) {
+	var buf bytes.Buffer
+	err := emitJSON(&buf, "ollama", "deepseek-r1:1.5b", "What is Go?", "Go is a language", nil)
+	if err != nil {
+		t.Fatalf("emitJSON error: %v", err)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("invalid JSON: %v\nraw: %s", err, buf.String())
+	}
+
+	if result["provider"] != "ollama" {
+		t.Errorf("provider = %v, want %q", result["provider"], "ollama")
+	}
+	if result["model"] != "deepseek-r1:1.5b" {
+		t.Errorf("model = %v, want %q", result["model"], "deepseek-r1:1.5b")
+	}
+	if result["prompt"] != "What is Go?" {
+		t.Errorf("prompt = %v, want %q", result["prompt"], "What is Go?")
+	}
+	if result["response"] != "Go is a language" {
+		t.Errorf("response = %v, want %q", result["response"], "Go is a language")
+	}
+	if result["error"] != nil {
+		t.Errorf("error = %v, want nil", result["error"])
+	}
+}
+
+func TestEmitJSONWithError(t *testing.T) {
+	var buf bytes.Buffer
+	err := emitJSON(&buf, "ollama", "bad-model", "hello", "", errors.New("model not found"))
+	if err != nil {
+		t.Fatalf("emitJSON error: %v", err)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+
+	if result["response"] != "" {
+		t.Errorf("response = %v, want empty", result["response"])
+	}
+	errVal, ok := result["error"].(string)
+	if !ok || errVal != "model not found" {
+		t.Errorf("error = %v, want %q", result["error"], "model not found")
 	}
 }
 

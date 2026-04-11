@@ -3,6 +3,7 @@ package cli
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ahr9n/ai-cli/internal/loader"
 	"github.com/ahr9n/ai-cli/internal/provider"
+	"github.com/ahr9n/ai-cli/internal/render"
 )
 
 // readStdin reads all data from r if it is not a terminal (i.e. piped input).
@@ -65,25 +67,50 @@ func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt str
 		Content: userPrompt,
 	})
 
+	jsonMode := opts.Output == "json"
+
 	l := loader.New(loader.Dots)
-	l.Start()
+	if !jsonMode {
+		l.Start()
+	}
 	defer l.Stop()
 
+	r := render.New()
+	var buf strings.Builder
 	var printed bool
+
 	err := p.StreamCompletion(ctx, messages, &provider.CompletionOptions{
 		Model:       opts.Model,
 		Temperature: opts.Temperature,
 	}, func(chunk string) {
 		l.Stop()
-		fmt.Print(chunk)
+		if !jsonMode {
+			fmt.Print(chunk)
+		}
+		buf.WriteString(chunk)
 		printed = true
 	})
+
+	if jsonMode {
+		return emitJSON(os.Stdout, p.Name(), opts.Model, userPrompt, buf.String(), err)
+	}
+
 	if err != nil {
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
 	if printed {
-		fmt.Println()
+		if r.IsTerminal() && buf.Len() > 0 {
+			// Clear raw streaming output, reprint with Glamour rendering.
+			lines := strings.Count(buf.String(), "\n") + 1
+			for i := 0; i < lines; i++ {
+				fmt.Print("\033[A\033[2K")
+			}
+			fmt.Print("\r")
+			fmt.Println(r.RenderBlock(buf.String()))
+		} else {
+			fmt.Println()
+		}
 	}
 	return nil
 }
@@ -98,6 +125,8 @@ func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOpti
 	if opts.MaxHistory > 0 {
 		fmt.Printf("Message history limit: %d messages\n", opts.MaxHistory)
 	}
+
+	r := render.New()
 
 	var messages []provider.Message
 	if opts.SystemPrompt != "" {
@@ -162,11 +191,25 @@ func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOpti
 			fmt.Printf("\nError: %v\n", err)
 			continue
 		}
-		fmt.Println()
+
+		raw := response.String()
+		if r.IsTerminal() && raw != "" {
+			// Clear raw streaming output, reprint rendered.
+			lines := strings.Count(raw, "\n") + 1
+			// +1 for the "Assistant: " prefix line.
+			lines++
+			for i := 0; i < lines; i++ {
+				fmt.Print("\033[A\033[2K")
+			}
+			fmt.Print("\r")
+			fmt.Printf("\nAssistant: %s\n", r.RenderBlock(raw))
+		} else {
+			fmt.Println()
+		}
 
 		messages = append(messages, provider.Message{
 			Role:    provider.RoleAssistant,
-			Content: response.String(),
+			Content: raw,
 		})
 
 		if opts.MaxHistory > 0 && len(messages) > opts.MaxHistory {
@@ -183,4 +226,31 @@ func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOpti
 	}
 
 	return nil
+}
+
+// emitJSON writes a structured JSON response to w.
+// When completionErr is non-nil, the error field is populated and the function returns nil
+// (the error has been reported in the JSON output).
+func emitJSON(w io.Writer, providerName, model, prompt, response string, completionErr error) error {
+	result := struct {
+		Provider string  `json:"provider"`
+		Model    string  `json:"model"`
+		Prompt   string  `json:"prompt"`
+		Response string  `json:"response"`
+		Error    *string `json:"error"`
+	}{
+		Provider: providerName,
+		Model:    model,
+		Prompt:   prompt,
+		Response: response,
+	}
+
+	if completionErr != nil {
+		errMsg := completionErr.Error()
+		result.Error = &errMsg
+	}
+
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(result)
 }

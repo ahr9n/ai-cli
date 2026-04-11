@@ -48,6 +48,14 @@ func addCommonFlags(cmd *cobra.Command, opts *ChatOptions) {
 	flags.StringVarP(&opts.SystemPrompt, "system", "s", "", "System prompt to set the assistant's behavior")
 	flags.IntVar(&opts.MaxHistory, "max-history", 20, "Maximum conversation history to keep (0 = unlimited)")
 	flags.StringVarP(&opts.PresetPrompt, "preset", "p", "", "Use a preset system prompt (creative, concise, code)")
+	flags.StringVarP(&opts.Output, "output", "o", "text", "Output format (text, json)")
+
+	cmd.RegisterFlagCompletionFunc("preset", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"creative", "concise", "code"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"text", "json"}, cobra.ShellCompDirectiveNoFileComp
+	})
 }
 
 func newProviderCommand(providerType provider.ProviderType, defaultModel string) *cobra.Command {
@@ -86,6 +94,22 @@ func newProviderCommand(providerType provider.ProviderType, defaultModel string)
 	addCommonFlags(cmd, opts)
 	cmd.Flags().StringVarP(&opts.Model, "model", "m", defaultModel, "Model to use")
 	cmd.Flags().StringVarP(&opts.ProviderURL, "url", "u", provider.DefaultURL(providerType), "Provider API URL")
+
+	cmd.RegisterFlagCompletionFunc("model", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		p, err := provider.New(providerType, opts.ProviderURL)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		models, err := p.ListModels(cmd.Context())
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		names := make([]string, len(models))
+		for i, m := range models {
+			names[i] = m.Name
+		}
+		return names, cobra.ShellCompDirectiveNoFileComp
+	})
 
 	return cmd
 }
