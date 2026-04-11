@@ -2,30 +2,26 @@ package localai
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"time"
+	"strings"
 
-	"github.com/ahr9n/ai-cli/pkg/api"
-	"github.com/ahr9n/ai-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/internal/api"
+	"github.com/ahr9n/ai-cli/internal/provider"
 )
 
 type Client struct {
-	*api.BaseClient
+	base *api.BaseClient
 }
 
 type completionRequest struct {
-	Model       string    `json:"model"`
-	Messages    []Message `json:"messages"`
-	Temperature float32   `json:"temperature"`
-	Stream      bool      `json:"stream"`
-}
-
-type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Model       string             `json:"model"`
+	Messages    []provider.Message `json:"messages"`
+	Temperature float32            `json:"temperature"`
+	Stream      bool               `json:"stream"`
 }
 
 type streamingResponse struct {
@@ -50,92 +46,75 @@ type modelInfo struct {
 	Status      string `json:"status"`
 	Description string `json:"description"`
 }
+
 type listModelsResponse struct {
 	Data []modelInfo `json:"data"`
 }
 
-func NewClient(baseURL string) provider.Provider {
+func NewClient(baseURL string) *Client {
 	return &Client{
-		BaseClient: &api.BaseClient{
-			BaseURL: baseURL,
-			HTTPClient: &http.Client{
-				Timeout: 60 * time.Second, // Increased timeout
-			},
+		base: &api.BaseClient{
+			BaseURL:    baseURL,
+			HTTPClient: &http.Client{},
 		},
 	}
 }
 
-func (c *Client) CreateCompletion(messages []provider.Message, opts *provider.CompletionOptions) (string, error) {
-	var result string
-	err := c.StreamCompletion(messages, opts, func(response string) {
-		result += response
+func (c *Client) CreateCompletion(ctx context.Context, messages []provider.Message, opts *provider.CompletionOptions) (string, error) {
+	var result strings.Builder
+	err := c.StreamCompletion(ctx, messages, opts, func(chunk string) {
+		result.WriteString(chunk)
 	})
-	return result, err
+	return result.String(), err
 }
 
-func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.CompletionOptions, onResponse func(string)) error {
+func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Message, opts *provider.CompletionOptions, onResponse func(string)) error {
 	if len(messages) == 0 {
 		return fmt.Errorf("no messages provided")
 	}
 
-	localMessages := make([]Message, len(messages))
-	for i, msg := range messages {
-		localMessages[i] = Message{
-			Role:    msg.Role,
-			Content: msg.Content,
-		}
-	}
-
 	reqBody := completionRequest{
 		Model:       opts.Model,
-		Messages:    localMessages,
+		Messages:    messages,
 		Temperature: opts.Temperature,
 		Stream:      true,
 	}
 
-	resp, err := c.DoPost("v1/chat/completions", reqBody)
+	resp, err := c.base.DoPost(ctx, "v1/chat/completions", reqBody)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	if err := c.HandleError(resp); err != nil {
+	if err := c.base.HandleError(resp); err != nil {
 		return err
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
-	// Increase scanner buffer to 10MB (default is 64KB)
 	const maxScanTokenSize = 10 * 1024 * 1024
 	scanBuf := make([]byte, maxScanTokenSize)
 	scanner.Buffer(scanBuf, maxScanTokenSize)
 
 	for scanner.Scan() {
 		line := scanner.Text()
-
-		// Skip empty lines
 		if line == "" {
 			continue
 		}
 
-		// Skip "data: " prefix if present (SSE format)
-		if len(line) > 6 && line[0:6] == "data: " {
-			line = line[6:]
+		if strings.HasPrefix(line, "data: ") {
+			line = strings.TrimPrefix(line, "data: ")
 		}
 
-		// Skip "[DONE]" message
 		if line == "[DONE]" {
 			continue
 		}
 
 		var streamResp streamingResponse
 		if err := json.Unmarshal([]byte(line), &streamResp); err != nil {
-			// Try parsing as non-streaming response
 			var response completionResponse
 			if err := json.Unmarshal([]byte(line), &response); err != nil {
-				continue // Skip lines we can't parse
+				continue
 			}
-
-			// Handle non-streaming response
 			if len(response.Choices) > 0 {
 				content := response.Choices[0].Message.Content
 				if content != "" {
@@ -145,7 +124,6 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 			continue
 		}
 
-		// Handle streaming response
 		if len(streamResp.Choices) > 0 {
 			content := streamResp.Choices[0].Delta.Content
 			if content != "" {
@@ -161,14 +139,14 @@ func (c *Client) StreamCompletion(messages []provider.Message, opts *provider.Co
 	return nil
 }
 
-func (c *Client) ListModels() ([]provider.ModelInfo, error) {
-	resp, err := c.DoGet("v1/models")
+func (c *Client) ListModels(ctx context.Context) ([]provider.ModelInfo, error) {
+	resp, err := c.base.DoGet(ctx, "v1/models")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list models: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := c.HandleError(resp); err != nil {
+	if err := c.base.HandleError(resp); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +157,6 @@ func (c *Client) ListModels() ([]provider.ModelInfo, error) {
 
 	var response listModelsResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		// Try to parse as array if object parsing fails
 		var altResponse []modelInfo
 		if altErr := json.Unmarshal(body, &altResponse); altErr != nil {
 			return nil, fmt.Errorf("failed to decode response: %w", err)

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,13 +14,13 @@ type BaseClient struct {
 	HTTPClient *http.Client
 }
 
-func (c *BaseClient) DoPost(path string, payload interface{}) (*http.Response, error) {
+func (c *BaseClient) DoPost(ctx context.Context, path string, payload any) (*http.Response, error) {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", c.BaseURL, path), bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/%s", c.BaseURL, path), bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -34,8 +35,8 @@ func (c *BaseClient) DoPost(path string, payload interface{}) (*http.Response, e
 	return resp, nil
 }
 
-func (c *BaseClient) DoGet(path string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", c.BaseURL, path), nil)
+func (c *BaseClient) DoGet(ctx context.Context, path string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/%s", c.BaseURL, path), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ahr9n/ai-cli/pkg/provider"
+	"github.com/ahr9n/ai-cli/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -25,22 +25,15 @@ func HandleDefaultProvider(rootCmd *cobra.Command, args []string) error {
 		return rootCmd.Help()
 	}
 
-	var providerCmd *cobra.Command
-	switch config.Provider {
-	case string(provider.Ollama):
-		providerCmd = newOllamaCommand()
-	case string(provider.LocalAI):
-		providerCmd = newLocalAICommand()
-	default:
+	providerType := provider.ProviderType(config.Provider)
+	p, err := newProvider(providerType, config.ProviderURL)
+	if err != nil {
 		return fmt.Errorf("unknown default provider type: %s", config.Provider)
 	}
 
-	if providerCmd != nil {
-		providerCmd.SetArgs(args)
-		return providerCmd.Execute()
-	}
-
-	return rootCmd.Help()
+	providerCmd := newProviderCommand(providerType, p.GetDefaultModel())
+	providerCmd.SetArgs(args)
+	return providerCmd.Execute()
 }
 
 func newDefaultCommand() *cobra.Command {
@@ -70,7 +63,7 @@ func newDefaultSetCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			providerType := provider.ProviderType(args[0])
 
-			if _, err := NewProvider(providerType, ""); err != nil {
+			if _, err := newProvider(providerType, ""); err != nil {
 				return fmt.Errorf("invalid provider: %s", args[0])
 			}
 
@@ -134,7 +127,7 @@ func newDefaultClearCommand() *cobra.Command {
 	}
 }
 
-func getConfigPath() (string, error) {
+func ensureConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -147,7 +140,7 @@ func getConfigPath() (string, error) {
 }
 
 func saveDefaultConfig(config defaultConfig) error {
-	path, err := getConfigPath()
+	path, err := ensureConfigPath()
 	if err != nil {
 		return err
 	}
@@ -162,7 +155,7 @@ func saveDefaultConfig(config defaultConfig) error {
 
 func loadDefaultConfig() (defaultConfig, error) {
 	var config defaultConfig
-	path, err := getConfigPath()
+	path, err := ensureConfigPath()
 	if err != nil {
 		return config, err
 	}
@@ -180,13 +173,13 @@ func loadDefaultConfig() (defaultConfig, error) {
 }
 
 func removeDefaultConfig() error {
-	path, err := getConfigPath()
+	path, err := ensureConfigPath()
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(path); os.IsNotExist(err) {
+	err = os.Remove(path)
+	if os.IsNotExist(err) {
 		return nil
-	} else {
-		return err
 	}
+	return err
 }

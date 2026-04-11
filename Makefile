@@ -1,20 +1,22 @@
 .PHONY: build run test clean install format
 
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+
 build:
-	go build -o ai-cli cmd/main.go
+	go build -ldflags "-X github.com/ahr9n/ai-cli/internal/cli.Version=$(VERSION)" -o bin/ai-cli ./cmd/ai-cli
 
 run: build
-	./ai-cli
+	./bin/ai-cli
 
 test:
-	go test -v ./test/...
+	go test -race -v ./...
 
 clean:
 	rm -rf bin/
 	go clean
 
 install: build
-	mv ai-cli $(GOPATH)/ai-cli
+	cp bin/ai-cli $(GOPATH)/bin/ai-cli
 
 format:
 	go fmt ./...

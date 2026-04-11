@@ -2,59 +2,59 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/ahr9n/ai-cli/pkg/prompts"
-	"github.com/ahr9n/ai-cli/pkg/provider"
-	"github.com/ahr9n/ai-cli/pkg/utils"
+	"github.com/ahr9n/ai-cli/internal/loader"
+	"github.com/ahr9n/ai-cli/internal/provider"
 )
 
-func runChat(p provider.Provider, opts *ChatOptions, args []string) error {
+func runChat(ctx context.Context, p provider.Provider, opts *ChatOptions, args []string) error {
 	if opts.Interactive {
-		return runInteractiveMode(p, opts)
+		return runInteractiveMode(ctx, p, opts)
 	}
 
 	if len(args) == 0 {
 		return fmt.Errorf("please provide a prompt or use -i for interactive mode")
 	}
 
-	prompt := strings.Join(args, " ")
-	return handleSinglePrompt(p, prompt, opts)
+	userPrompt := strings.Join(args, " ")
+	return handleSinglePrompt(ctx, p, userPrompt, opts)
 }
 
-func handleSinglePrompt(p provider.Provider, prompt string, opts *ChatOptions) error {
-	messages := []provider.Message{}
+func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt string, opts *ChatOptions) error {
+	var messages []provider.Message
 
 	if opts.SystemPrompt != "" {
 		messages = append(messages, provider.Message{
-			Role:    prompts.RoleSystem,
+			Role:    provider.RoleSystem,
 			Content: opts.SystemPrompt,
 		})
 	}
 	messages = append(messages, provider.Message{
-		Role:    prompts.RoleUser,
-		Content: prompt,
+		Role:    provider.RoleUser,
+		Content: userPrompt,
 	})
 
-	loader := utils.InitLoader(utils.Dots)
-	response, err := p.CreateCompletion(messages, &provider.CompletionOptions{
+	l := loader.New(loader.Dots)
+	l.Start()
+	defer l.Stop()
+
+	response, err := p.CreateCompletion(ctx, messages, &provider.CompletionOptions{
 		Model:       opts.Model,
 		Temperature: opts.Temperature,
 	})
-
-	loader.Stop()
 	if err != nil {
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
 	fmt.Println(response)
-
 	return nil
 }
 
-func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
+func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOptions) error {
 	fmt.Printf("Starting interactive chat mode with %s (type 'exit' or 'quit' to quit, 'clear' to reset history)\n", p.Name())
 	fmt.Printf("Model: %s\n", opts.Model)
 	if opts.MaxHistory > 0 {
@@ -64,7 +64,7 @@ func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
 	var messages []provider.Message
 	if opts.SystemPrompt != "" {
 		messages = append(messages, provider.Message{
-			Role:    prompts.RoleSystem,
+			Role:    provider.RoleSystem,
 			Content: opts.SystemPrompt,
 		})
 		fmt.Printf("System prompt: %s\n", opts.SystemPrompt)
@@ -88,35 +88,37 @@ func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
 		case "clear":
 			if opts.SystemPrompt != "" {
 				messages = []provider.Message{{
-					Role:    prompts.RoleSystem,
+					Role:    provider.RoleSystem,
 					Content: opts.SystemPrompt,
 				}}
 			} else {
-				messages = []provider.Message{}
+				messages = nil
 			}
 			fmt.Println("Conversation history cleared")
 			continue
 		}
 
 		messages = append(messages, provider.Message{
-			Role:    prompts.RoleUser,
+			Role:    provider.RoleUser,
 			Content: input,
 		})
-		loader := utils.InitLoader(utils.Dots)
+
+		l := loader.New(loader.Dots)
+		l.Start()
 
 		var response strings.Builder
-		err := p.StreamCompletion(messages, &provider.CompletionOptions{
+		err := p.StreamCompletion(ctx, messages, &provider.CompletionOptions{
 			Model:       opts.Model,
 			Temperature: opts.Temperature,
 		}, func(chunk string) {
 			if response.Len() == 0 {
-				loader.Stop()
+				l.Stop()
 				fmt.Print("\nAssistant: ")
 			}
 			fmt.Print(chunk)
 			response.WriteString(chunk)
 		})
-		loader.Stop()
+		l.Stop()
 
 		if err != nil {
 			fmt.Printf("\nError: %v\n", err)
@@ -125,12 +127,12 @@ func runInteractiveMode(p provider.Provider, opts *ChatOptions) error {
 		fmt.Println()
 
 		messages = append(messages, provider.Message{
-			Role:    prompts.RoleAssistant,
+			Role:    provider.RoleAssistant,
 			Content: response.String(),
 		})
 
 		if opts.MaxHistory > 0 && len(messages) > opts.MaxHistory {
-			if messages[0].Role == prompts.RoleSystem {
+			if messages[0].Role == provider.RoleSystem {
 				messages = append([]provider.Message{messages[0]}, messages[len(messages)-opts.MaxHistory+1:]...)
 			} else {
 				messages = messages[len(messages)-opts.MaxHistory:]

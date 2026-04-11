@@ -1,7 +1,10 @@
 package cli
 
 import (
-	"github.com/ahr9n/ai-cli/pkg/prompts"
+	"fmt"
+
+	"github.com/ahr9n/ai-cli/internal/prompt"
+	"github.com/ahr9n/ai-cli/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +24,7 @@ func NewRootCommand() *cobra.Command {
 		Use:   "ai-cli",
 		Short: "A CLI tool to interact with various AI models",
 		Long: `A command-line interface for interacting with various AI providers and models.
-Supports both single prompts and interactive conversations.`,
+Supports both single prompt and interactive conversations.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return HandleDefaultProvider(cmd, args)
 		},
@@ -30,27 +33,29 @@ Supports both single prompts and interactive conversations.`,
 	cmd.AddCommand(
 		versionCommand(),
 		listProvidersCommand(),
-		newOllamaCommand(),
-		newLocalAICommand(),
+		newProviderCommand(provider.Ollama, "deepseek-r1:1.5b"),
+		newProviderCommand(provider.LocalAI, "gpt-3.5-turbo"),
 		newDefaultCommand(),
 	)
 
 	return cmd
 }
 
-func resolveSystemPrompt(opts *ChatOptions) {
+func resolveSystemPrompt(opts *ChatOptions) error {
 	if opts.SystemPrompt != "" {
-		return
+		return nil
 	}
-
 	switch opts.PresetPrompt {
 	case "creative":
-		opts.SystemPrompt = prompts.CreativeSystem()
+		opts.SystemPrompt = prompt.Creative
 	case "concise":
-		opts.SystemPrompt = prompts.ConciseSystem()
+		opts.SystemPrompt = prompt.Concise
 	case "code":
-		opts.SystemPrompt = prompts.CodeSystem()
+		opts.SystemPrompt = prompt.Code
 	case "":
-		opts.SystemPrompt = prompts.DefaultSystem()
+		opts.SystemPrompt = prompt.Default
+	default:
+		return fmt.Errorf("unknown preset prompt: %q (available: creative, concise, code)", opts.PresetPrompt)
 	}
+	return nil
 }

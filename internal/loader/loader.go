@@ -1,4 +1,4 @@
-package utils
+package loader
 
 import (
 	"fmt"
@@ -13,14 +13,12 @@ type SpinnerStyle struct {
 	Speed   time.Duration
 }
 
-var (
-	Dots = SpinnerStyle{
-		Frames:  []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"},
-		Speed:   100 * time.Millisecond,
-		Message: "Thinking",
-		Color:   "\033[32m",
-	}
-)
+var Dots = SpinnerStyle{
+	Frames:  []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"},
+	Speed:   100 * time.Millisecond,
+	Message: "Thinking",
+	Color:   "\033[32m",
+}
 
 type Loader struct {
 	stop    chan struct{}
@@ -29,18 +27,11 @@ type Loader struct {
 	style   SpinnerStyle
 }
 
-func InitLoader(style SpinnerStyle) *Loader {
-	loader := &Loader{
+func New(style SpinnerStyle) *Loader {
+	return &Loader{
 		stop:  make(chan struct{}),
 		style: style,
 	}
-	time.Sleep(500 * time.Millisecond)
-	loader.Start()
-	time.Sleep(500 * time.Millisecond)
-	loader.SetMessage("Generating the answer")
-	time.Sleep(500 * time.Millisecond)
-
-	return loader
 }
 
 func (l *Loader) SetMessage(message string) {
