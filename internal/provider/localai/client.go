@@ -6,12 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"github.com/ahr9n/ai-cli/internal/api"
 	"github.com/ahr9n/ai-cli/internal/provider"
 )
+
+func init() {
+	provider.Register(provider.LocalAI, provider.Registration{
+		Factory:      func(baseURL string) provider.Provider { return NewClient(baseURL) },
+		DefaultURL:   "http://localhost:8080",
+		DefaultModel: "gpt-3.5-turbo",
+		Name:         "LocalAI",
+		Description:  "Self-hosted AI model server compatible with OpenAI's API",
+	})
+}
 
 type Client struct {
 	base *api.BaseClient
@@ -53,10 +62,7 @@ type listModelsResponse struct {
 
 func NewClient(baseURL string) *Client {
 	return &Client{
-		base: &api.BaseClient{
-			BaseURL:    baseURL,
-			HTTPClient: &http.Client{},
-		},
+		base: api.NewBaseClient(baseURL),
 	}
 }
 
@@ -70,7 +76,7 @@ func (c *Client) CreateCompletion(ctx context.Context, messages []provider.Messa
 
 func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Message, opts *provider.CompletionOptions, onResponse func(string)) error {
 	if len(messages) == 0 {
-		return fmt.Errorf("no messages provided")
+		return provider.ErrNoMessages
 	}
 
 	reqBody := completionRequest{
@@ -86,7 +92,7 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 	}
 	defer resp.Body.Close()
 
-	if err := c.base.HandleError(resp); err != nil {
+	if err := c.base.CheckStatus(resp); err != nil {
 		return err
 	}
 
@@ -95,6 +101,7 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 	scanBuf := make([]byte, maxScanTokenSize)
 	scanner.Buffer(scanBuf, maxScanTokenSize)
 
+	var parseFailures int
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
@@ -113,8 +120,13 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 		if err := json.Unmarshal([]byte(line), &streamResp); err != nil {
 			var response completionResponse
 			if err := json.Unmarshal([]byte(line), &response); err != nil {
+				parseFailures++
+				if parseFailures > 5 {
+					return fmt.Errorf("too many parse failures in stream, last line: %q", line)
+				}
 				continue
 			}
+			parseFailures = 0
 			if len(response.Choices) > 0 {
 				content := response.Choices[0].Message.Content
 				if content != "" {
@@ -123,6 +135,7 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 			}
 			continue
 		}
+		parseFailures = 0
 
 		if len(streamResp.Choices) > 0 {
 			content := streamResp.Choices[0].Delta.Content
@@ -146,10 +159,11 @@ func (c *Client) ListModels(ctx context.Context) ([]provider.ModelInfo, error) {
 	}
 	defer resp.Body.Close()
 
-	if err := c.base.HandleError(resp); err != nil {
+	if err := c.base.CheckStatus(resp); err != nil {
 		return nil, err
 	}
 
+	// ReadAll because we may need to retry parsing as array vs object.
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)

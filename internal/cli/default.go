@@ -15,25 +15,25 @@ type defaultConfig struct {
 	ProviderURL string `json:"provider_url,omitempty"`
 }
 
-func HandleDefaultProvider(rootCmd *cobra.Command, args []string) error {
+func handleDefaultProvider(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		return rootCmd.Help()
+		return cmd.Help()
 	}
 
 	config, err := loadDefaultConfig()
 	if err != nil || config.Provider == "" {
-		return rootCmd.Help()
+		return cmd.Help()
 	}
 
 	providerType := provider.ProviderType(config.Provider)
-	p, err := newProvider(providerType, config.ProviderURL)
+	p, err := provider.New(providerType, config.ProviderURL)
 	if err != nil {
 		return fmt.Errorf("unknown default provider type: %s", config.Provider)
 	}
 
 	providerCmd := newProviderCommand(providerType, p.GetDefaultModel())
 	providerCmd.SetArgs(args)
-	return providerCmd.Execute()
+	return providerCmd.ExecuteContext(cmd.Context())
 }
 
 func newDefaultCommand() *cobra.Command {
@@ -63,7 +63,7 @@ func newDefaultSetCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			providerType := provider.ProviderType(args[0])
 
-			if _, err := newProvider(providerType, ""); err != nil {
+			if _, err := provider.New(providerType, ""); err != nil {
 				return fmt.Errorf("invalid provider: %s", args[0])
 			}
 

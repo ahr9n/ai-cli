@@ -56,13 +56,3 @@ type ProviderInfo struct {
 	Name        string
 	Description string
 }
-
-var defaultURLs = map[ProviderType]string{
-	Ollama:  "http://localhost:11434",
-	LocalAI: "http://localhost:8080",
-}
-
-// DefaultURL returns the default base URL for a provider type.
-func DefaultURL(pt ProviderType) string {
-	return defaultURLs[pt]
-}

@@ -26,17 +26,19 @@ func NewRootCommand() *cobra.Command {
 		Long: `A command-line interface for interacting with various AI providers and models.
 Supports both single prompt and interactive conversations.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return HandleDefaultProvider(cmd, args)
+			return handleDefaultProvider(cmd, args)
 		},
 	}
 
 	cmd.AddCommand(
 		versionCommand(),
 		listProvidersCommand(),
-		newProviderCommand(provider.Ollama, "deepseek-r1:1.5b"),
-		newProviderCommand(provider.LocalAI, "gpt-3.5-turbo"),
 		newDefaultCommand(),
 	)
+
+	for _, info := range provider.All() {
+		cmd.AddCommand(newProviderCommand(info.Type, provider.DefaultModel(info.Type)))
+	}
 
 	return cmd
 }

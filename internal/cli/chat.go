@@ -42,19 +42,26 @@ func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt str
 	l.Start()
 	defer l.Stop()
 
-	response, err := p.CreateCompletion(ctx, messages, &provider.CompletionOptions{
+	err := p.StreamCompletion(ctx, messages, &provider.CompletionOptions{
 		Model:       opts.Model,
 		Temperature: opts.Temperature,
+	}, func(chunk string) {
+		l.Stop()
+		fmt.Print(chunk)
 	})
 	if err != nil {
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
-	fmt.Println(response)
+	fmt.Println()
 	return nil
 }
 
 func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOptions) error {
+	if opts.MaxHistory > 0 && opts.MaxHistory < 3 && opts.SystemPrompt != "" {
+		opts.MaxHistory = 3
+	}
+
 	fmt.Printf("Starting interactive chat mode with %s (type 'exit' or 'quit' to quit, 'clear' to reset history)\n", p.Name())
 	fmt.Printf("Model: %s\n", opts.Model)
 	if opts.MaxHistory > 0 {

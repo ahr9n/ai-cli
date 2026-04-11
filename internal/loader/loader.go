@@ -2,6 +2,7 @@ package loader
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 )
@@ -41,6 +42,10 @@ func (l *Loader) SetMessage(message string) {
 }
 
 func (l *Loader) Start() {
+	if fi, err := os.Stderr.Stat(); err != nil || fi.Mode()&os.ModeCharDevice == 0 {
+		return // skip spinner when stderr is not a terminal
+	}
+
 	l.mu.Lock()
 	if l.stopped {
 		l.mu.Unlock()
@@ -64,8 +69,8 @@ func (l *Loader) Start() {
 				message := l.style.Message
 				l.mu.Unlock()
 
-				fmt.Print("\r\033[K")
-				fmt.Printf("%s%s %s%s",
+				fmt.Fprint(os.Stderr, "\r\033[K")
+				fmt.Fprintf(os.Stderr, "%s%s %s%s",
 					l.style.Color,
 					message,
 					l.style.Frames[i%len(l.style.Frames)],
@@ -77,12 +82,16 @@ func (l *Loader) Start() {
 	}()
 }
 
+// Stop halts the spinner. Safe to call multiple times — only the first call
+// clears the line; subsequent calls are no-ops.
 func (l *Loader) Stop() {
 	l.mu.Lock()
 	if !l.stopped {
 		l.stopped = true
 		close(l.stop)
+		l.mu.Unlock()
+		fmt.Fprint(os.Stderr, "\r\033[K")
+		return
 	}
 	l.mu.Unlock()
-	fmt.Print("\r\033[K")
 }

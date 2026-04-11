@@ -5,34 +5,22 @@ import (
 	"fmt"
 	"os"
 	"text/tabwriter"
+	"time"
 
 	"github.com/ahr9n/ai-cli/internal/provider"
-	"github.com/ahr9n/ai-cli/internal/provider/localai"
-	"github.com/ahr9n/ai-cli/internal/provider/ollama"
 	"github.com/spf13/cobra"
-)
 
-func availableProviders() []provider.ProviderInfo {
-	return []provider.ProviderInfo{
-		{
-			Type:        provider.Ollama,
-			Name:        "Ollama",
-			Description: "Run large language models locally",
-		},
-		{
-			Type:        provider.LocalAI,
-			Name:        "LocalAI",
-			Description: "Self-hosted AI model server compatible with OpenAI's API",
-		},
-	}
-}
+	// Register providers via init().
+	_ "github.com/ahr9n/ai-cli/internal/provider/localai"
+	_ "github.com/ahr9n/ai-cli/internal/provider/ollama"
+)
 
 func listProvidersCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "providers",
 		Short: "List available AI providers",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			providers := availableProviders()
+			providers := provider.All()
 
 			fmt.Println("Available Providers:")
 			fmt.Println("--------------------")
@@ -45,21 +33,6 @@ func listProvidersCommand() *cobra.Command {
 
 			return nil
 		},
-	}
-}
-
-func newProvider(providerType provider.ProviderType, baseURL string) (provider.Provider, error) {
-	if baseURL == "" {
-		baseURL = provider.DefaultURL(providerType)
-	}
-
-	switch providerType {
-	case provider.Ollama:
-		return ollama.NewClient(baseURL), nil
-	case provider.LocalAI:
-		return localai.NewClient(baseURL), nil
-	default:
-		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}
 }
 
@@ -80,7 +53,7 @@ func newProviderCommand(providerType provider.ProviderType, defaultModel string)
 		Use:   string(providerType) + " [prompt]",
 		Short: fmt.Sprintf("Use %s provider", providerType),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			p, err := newProvider(providerType, opts.ProviderURL)
+			p, err := provider.New(providerType, opts.ProviderURL)
 			if err != nil {
 				return err
 			}
@@ -102,6 +75,9 @@ func newProviderCommand(providerType provider.ProviderType, defaultModel string)
 }
 
 func displayModels(ctx context.Context, p provider.Provider) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	models, err := p.ListModels(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list models: %w", err)
