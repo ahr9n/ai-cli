@@ -26,12 +26,11 @@ func handleDefaultProvider(cmd *cobra.Command, args []string) error {
 	}
 
 	providerType := provider.ProviderType(config.Provider)
-	p, err := provider.New(providerType, config.ProviderURL)
-	if err != nil {
+	if provider.DefaultURL(providerType) == "" {
 		return fmt.Errorf("unknown default provider type: %s", config.Provider)
 	}
 
-	providerCmd := newProviderCommand(providerType, p.GetDefaultModel())
+	providerCmd := newProviderCommand(providerType, provider.DefaultModel(providerType))
 	providerCmd.SetArgs(args)
 	return providerCmd.ExecuteContext(cmd.Context())
 }

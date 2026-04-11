@@ -190,10 +190,6 @@ func (c *Client) ListModels(ctx context.Context) ([]provider.ModelInfo, error) {
 	return models, nil
 }
 
-func (c *Client) GetDefaultModel() string {
-	return "gpt-3.5-turbo"
-}
-
 func (c *Client) Name() string {
 	return "LocalAI"
 }

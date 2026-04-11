@@ -37,7 +37,6 @@ type Provider interface {
 	CreateCompletion(ctx context.Context, messages []Message, opts *CompletionOptions) (string, error)
 	StreamCompletion(ctx context.Context, messages []Message, opts *CompletionOptions, onResponse func(string)) error
 	ListModels(ctx context.Context) ([]ModelInfo, error)
-	GetDefaultModel() string
 	Name() string
 	Description() string
 }

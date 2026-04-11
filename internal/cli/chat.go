@@ -42,18 +42,22 @@ func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt str
 	l.Start()
 	defer l.Stop()
 
+	var printed bool
 	err := p.StreamCompletion(ctx, messages, &provider.CompletionOptions{
 		Model:       opts.Model,
 		Temperature: opts.Temperature,
 	}, func(chunk string) {
 		l.Stop()
 		fmt.Print(chunk)
+		printed = true
 	})
 	if err != nil {
 		return fmt.Errorf("chat completion failed: %w", err)
 	}
 
-	fmt.Println()
+	if printed {
+		fmt.Println()
+	}
 	return nil
 }
 

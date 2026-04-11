@@ -154,10 +154,6 @@ func (c *Client) ListModels(ctx context.Context) ([]provider.ModelInfo, error) {
 	return models, nil
 }
 
-func (c *Client) GetDefaultModel() string {
-	return "deepseek-r1:1.5b"
-}
-
 func (c *Client) Name() string {
 	return "Ollama"
 }
