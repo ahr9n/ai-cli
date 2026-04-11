@@ -1,81 +1,110 @@
 # AI CLI
+
 A command-line interface for interacting with various AI providers and models.
 
 ## Features
-- Support for multiple AI providers:
-  - Ollama (local LLM runtime)
-  - LocalAI (self-hosted AI model server)
-- Interactive chat mode
-- System prompts for controlling AI behavior
-- Command history management
-- Pre-defined persona presets
-- Streaming responses
-- Model selection
 
-
+- Multiple AI providers (Ollama, LocalAI) with a pluggable registry
+- Interactive chat mode with conversation history
+- Streaming responses for both single prompts and interactive mode
+- System prompts and preset personas (creative, concise, code)
+- Configurable default provider
+- Graceful cancellation via Ctrl+C / SIGTERM
 
 ## Installation
+
 ```bash
 git clone https://github.com/ahr9n/ai-cli.git
 cd ai-cli
-go mod download
 make build
 make install
 ```
 
 ## Requirements
-- Go 1.24 or later installed
-- For Ollama provider: [Ollama](https://ollama.ai/) installed and running
-- For LocalAI provider: [LocalAI](https://github.com/go-skynet/LocalAI) installed and running
+
+- Go 1.24 or later
+- At least one provider running locally:
+  - [Ollama](https://ollama.ai/) — local LLM runtime
+  - [LocalAI](https://github.com/mudler/LocalAI) — self-hosted OpenAI-compatible server
 
 ## Usage
 
-### Basic Examples
+### Single prompt
+
 ```bash
-ai-cli ollama "What is the capital of Palestine?" # use Ollama with a single prompt 
-ai-cli localai "What is the old capital of Egypt?" # use LocalAI with a single prompt 
-ai-cli ollama -i # start interactive chat mode with Ollama
-ai-cli ollama --list-models # list available models with Ollama
-ai-cli ollama --model llama3 "What is AI CLI?" # use a specific model
+ai-cli ollama "What is the capital of Palestine?"
+ai-cli localai "What is the old capital of Egypt?"
+ai-cli ollama --model llama3 "What is AI CLI?"
 ```
 
-### Advanced Features
+### Interactive mode
+
 ```bash
-ai-cli ollama -s "You are a math tutor" "Explain calculus" # use a specific system prompt
-ai-cli ollama -p creative "Tell me a story about a robot" # use a preset prompt style
-ai-cli default set ollama # set a default provider
-ai-cli ollama -i --max-history 10 # limit conversation history (in interactive mode)
-ai-cli ollama -u http://localhost:8080 "Hello" # use a custom API URL
+ai-cli ollama -i
+ai-cli ollama -i --max-history 10
 ```
 
-### Interactive Mode
-In interactive mode, you can:
-- Type `exit` or `quit` to end the session
-- Type `clear` to reset the conversation history
-- Have a continuous conversation with context
+In interactive mode, type `exit` or `quit` to end the session, and `clear` to reset conversation history.
 
-## Available Commands
-```
-ai-cli
-  ├── version        - Print version information
-  ├── providers      - List available AI providers
-  ├── ollama         - Use Ollama provider
-  ├── localai        - Use LocalAI provider
-  └── default        - Manage default provider settings
-      ├── set        - Set default provider
-      ├── show       - Show current default provider
-      └── clear      - Clear default provider setting
+### System prompts
+
+```bash
+ai-cli ollama -s "You are a math tutor" "Explain calculus"
+ai-cli ollama -p creative "Tell me a story about a robot"
+ai-cli ollama -p code "Explain binary search"
 ```
 
-## System Prompt Presets
-- `creative` - For imaginative and engaging responses
-- `concise` - For brief, direct answers
-- `code` - For coding assistance with clean, well-documented examples
+Available presets: `creative`, `concise`, `code`.
+
+### Default provider
+
+```bash
+ai-cli default set ollama
+ai-cli default set localai --url http://custom:8080
+ai-cli default show
+ai-cli default clear
+```
+
+With a default provider set, prompts work directly:
+
+```bash
+ai-cli "Hello, world"
+```
+
+### Other commands
+
+```bash
+ai-cli version
+ai-cli providers
+ai-cli ollama --list-models
+ai-cli ollama -u http://localhost:8080 "Hello"
+```
+
+## Project Structure
+
+```
+cmd/ai-cli/main.go          Entrypoint: signal handling, context setup
+internal/
+├── cli/                     Cobra command wiring, chat loop, config persistence
+├── api/                     Shared HTTP client (BaseClient, CheckStatus, HTTPError)
+├── provider/                Provider interface, registry, error types
+│   ├── ollama/              Ollama implementation (self-registers via init)
+│   └── localai/             LocalAI implementation (self-registers via init)
+├── prompt/                  System prompt constants
+└── loader/                  Terminal spinner (stderr, TTY-aware)
+```
+
+Providers register themselves at import time. Adding a new provider means creating a package under `internal/provider/<name>/` with an `init()` that calls `provider.Register(...)` and a blank import in `internal/cli/provider.go`.
 
 ## Development
+
 ```bash
-make build    # Build the binary
-make run      # Run the CLI
-make test     # Run tests
-make format   # Format code
+make build     # Build to bin/ai-cli (injects version via ldflags)
+make test      # Run all tests with race detector
+make format    # go fmt + go vet
+make clean     # Remove build artifacts
 ```
+
+## License
+
+See [LICENSE](LICENSE).

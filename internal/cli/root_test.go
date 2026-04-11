@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -99,17 +100,23 @@ func TestResolveSystemPrompt(t *testing.T) {
 }
 
 func TestDefaultSubcommands(t *testing.T) {
-	for _, sub := range []string{"default set --help", "default show --help", "default clear --help"} {
-		t.Run(sub, func(t *testing.T) {
+	subArgs := [][]string{
+		{"default", "set", "--help"},
+		{"default", "show", "--help"},
+		{"default", "clear", "--help"},
+	}
+	for _, args := range subArgs {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
 			cmd := NewRootCommand()
-			cmd.SetArgs([]string{sub})
+			cmd.SetArgs(args)
 
 			var buf bytes.Buffer
 			cmd.SetOut(&buf)
 			cmd.SetErr(&buf)
 
-			// --help always succeeds
-			_ = cmd.Execute()
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 		})
 	}
 }

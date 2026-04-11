@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// These tests mutate package-level registry state and must not use t.Parallel().
 func TestRegisterAndNew(t *testing.T) {
 	// Save and restore global state.
 	origRegistry := registry
@@ -68,7 +69,10 @@ func TestDefaultURL(t *testing.T) {
 	registry = make(map[ProviderType]Registration)
 	registrationOrder = nil
 
-	Register("test", Registration{DefaultURL: "http://localhost:8080"})
+	Register("test", Registration{
+		Factory:    func(baseURL string) Provider { return &stubProvider{baseURL: baseURL} },
+		DefaultURL: "http://localhost:8080",
+	})
 
 	if got := DefaultURL("test"); got != "http://localhost:8080" {
 		t.Errorf("DefaultURL = %q, want %q", got, "http://localhost:8080")
@@ -88,7 +92,10 @@ func TestDefaultModel(t *testing.T) {
 	registry = make(map[ProviderType]Registration)
 	registrationOrder = nil
 
-	Register("test", Registration{DefaultModel: "llama3"})
+	Register("test", Registration{
+		Factory:      func(baseURL string) Provider { return &stubProvider{baseURL: baseURL} },
+		DefaultModel: "llama3",
+	})
 
 	if got := DefaultModel("test"); got != "llama3" {
 		t.Errorf("DefaultModel = %q, want %q", got, "llama3")
@@ -108,8 +115,16 @@ func TestAll(t *testing.T) {
 	registry = make(map[ProviderType]Registration)
 	registrationOrder = nil
 
-	Register("alpha", Registration{Name: "Alpha", Description: "First"})
-	Register("beta", Registration{Name: "Beta", Description: "Second"})
+	Register("alpha", Registration{
+		Factory:     func(baseURL string) Provider { return &stubProvider{baseURL: baseURL} },
+		Name:        "Alpha",
+		Description: "First",
+	})
+	Register("beta", Registration{
+		Factory:     func(baseURL string) Provider { return &stubProvider{baseURL: baseURL} },
+		Name:        "Beta",
+		Description: "Second",
+	})
 
 	all := All()
 	if len(all) != 2 {
@@ -135,8 +150,14 @@ func TestRegisterIdempotent(t *testing.T) {
 	registry = make(map[ProviderType]Registration)
 	registrationOrder = nil
 
-	Register("dup", Registration{Name: "V1"})
-	Register("dup", Registration{Name: "V2"})
+	Register("dup", Registration{
+		Factory: func(baseURL string) Provider { return &stubProvider{baseURL: baseURL} },
+		Name:    "V1",
+	})
+	Register("dup", Registration{
+		Factory: func(baseURL string) Provider { return &stubProvider{baseURL: baseURL} },
+		Name:    "V2",
+	})
 
 	all := All()
 	if len(all) != 1 {
