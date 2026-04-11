@@ -85,7 +85,7 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		io.Copy(io.Discard, resp.Body) // drain for connection reuse
+		_, _ = io.Copy(io.Discard, resp.Body) // drain for connection reuse
 		return fmt.Errorf("%w: '%s' - try running: ollama pull %s", provider.ErrModelNotFound, opts.Model, opts.Model)
 	}
 

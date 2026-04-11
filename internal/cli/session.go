@@ -165,7 +165,7 @@ func chatExportCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&format, "format", "f", "markdown", "Export format (markdown, json)")
-	cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"markdown", "json"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	return cmd

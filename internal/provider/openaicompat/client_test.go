@@ -127,7 +127,7 @@ func TestContextCancellation(t *testing.T) {
 		Model: "test",
 	}, func(string) {})
 	if err == nil {
-		t.Fatal("expected error for cancelled context")
+		t.Fatal("expected error for canceled context")
 	}
 }
 

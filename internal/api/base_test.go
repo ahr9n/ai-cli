@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -201,6 +202,28 @@ func TestWithHeaderSkipsEmpty(t *testing.T) {
 	}
 }
 
+func TestFriendlyErrorConnectionRefused(t *testing.T) {
+	c := NewBaseClient("http://127.0.0.1:1")
+	_, err := c.DoPost(context.Background(), "test", map[string]string{})
+	if err == nil {
+		t.Fatal("expected error for connection refused")
+	}
+	if !strings.Contains(err.Error(), "connect") {
+		t.Errorf("error = %v, expected connection-related message", err)
+	}
+}
+
+func TestFriendlyErrorDNSFailure(t *testing.T) {
+	c := NewBaseClient("http://this-host-does-not-exist.invalid")
+	_, err := c.DoGet(context.Background(), "test")
+	if err == nil {
+		t.Fatal("expected error for DNS failure")
+	}
+	if !strings.Contains(err.Error(), "resolve") && !strings.Contains(err.Error(), "no such host") {
+		t.Errorf("error = %v, expected DNS-related message", err)
+	}
+}
+
 func TestDoPostContextCancellation(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -213,6 +236,6 @@ func TestDoPostContextCancellation(t *testing.T) {
 	c := NewBaseClient(srv.URL)
 	_, err := c.DoPost(ctx, "test", map[string]string{})
 	if err == nil {
-		t.Fatal("expected error for cancelled context")
+		t.Fatal("expected error for canceled context")
 	}
 }

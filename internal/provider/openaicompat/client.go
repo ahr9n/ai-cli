@@ -48,6 +48,8 @@ type completionRequest struct {
 	Messages    []provider.Message `json:"messages"`
 	Temperature float32            `json:"temperature"`
 	Stream      bool               `json:"stream"`
+	MaxTokens   int                `json:"max_tokens,omitempty"`
+	TopP        float32            `json:"top_p,omitempty"`
 }
 
 type streamingResponse struct {
@@ -95,6 +97,8 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 		Messages:    messages,
 		Temperature: opts.Temperature,
 		Stream:      true,
+		MaxTokens:   opts.MaxTokens,
+		TopP:        opts.TopP,
 	}
 
 	resp, err := c.base.DoPost(ctx, "chat/completions", reqBody)
@@ -119,9 +123,7 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 			continue
 		}
 
-		if strings.HasPrefix(line, "data: ") {
-			line = strings.TrimPrefix(line, "data: ")
-		}
+		line = strings.TrimPrefix(line, "data: ")
 
 		if line == "[DONE]" {
 			continue

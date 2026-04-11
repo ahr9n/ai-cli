@@ -6,6 +6,7 @@ A command-line interface for interacting with various AI providers and models.
 
 [![Go Tests](https://github.com/ahr9n/ai-cli/actions/workflows/go.yml/badge.svg)](https://github.com/ahr9n/ai-cli/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ahr9n/ai-cli)](https://goreportcard.com/report/github.com/ahr9n/ai-cli)
+[![codecov](https://codecov.io/gh/ahr9n/ai-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/ahr9n/ai-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Installation
@@ -188,6 +189,8 @@ make test      # Run all tests with race detector
 make format    # go fmt + go vet
 make clean     # Remove build artifacts
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to add new providers.
 
 ## License
 

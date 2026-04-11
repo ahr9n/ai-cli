@@ -12,6 +12,8 @@ type ChatOptions struct {
 	Interactive  bool
 	Model        string
 	Temperature  float32
+	MaxTokens    int
+	TopP         float32
 	ProviderURL  string
 	ListModels   bool
 	SystemPrompt string

@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 )
 
@@ -57,7 +59,7 @@ func (c *BaseClient) DoPost(ctx context.Context, path string, payload any) (*htt
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, friendlyError(err)
 	}
 
 	return resp, nil
@@ -75,10 +77,25 @@ func (c *BaseClient) DoGet(ctx context.Context, path string) (*http.Response, er
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, friendlyError(err)
 	}
 
 	return resp, nil
+}
+
+// friendlyError translates common network errors into user-readable messages.
+func friendlyError(err error) error {
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		if opErr.Op == "dial" {
+			return fmt.Errorf("cannot connect to %s — is the server running? (%w)", opErr.Addr, err)
+		}
+	}
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return fmt.Errorf("cannot resolve host %q — check the URL (%w)", dnsErr.Name, err)
+	}
+	return fmt.Errorf("request failed: %w", err)
 }
 
 // CheckStatus returns nil for 200 OK responses. For all other status codes,

@@ -94,6 +94,8 @@ func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt str
 	err := p.StreamCompletion(ctx, messages, &provider.CompletionOptions{
 		Model:       opts.Model,
 		Temperature: opts.Temperature,
+		MaxTokens:   opts.MaxTokens,
+		TopP:        opts.TopP,
 	}, func(chunk string) {
 		l.Stop()
 		if !jsonMode {
@@ -171,7 +173,7 @@ func runInteractiveWithSession(ctx context.Context, p provider.Provider, opts *C
 	if sess != nil && len(sess.Messages) == 0 && len(messages) > 0 {
 		sess.Messages = append(sess.Messages, messages...)
 		sess.Meta.Messages = len(sess.Messages)
-		session.Save(sess)
+		_ = session.Save(sess)
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)

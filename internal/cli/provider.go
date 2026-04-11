@@ -45,6 +45,8 @@ func addCommonFlags(cmd *cobra.Command, opts *ChatOptions) {
 	flags := cmd.Flags()
 	flags.BoolVarP(&opts.Interactive, "interactive", "i", false, "Start interactive chat mode")
 	flags.Float32VarP(&opts.Temperature, "temperature", "t", 0.7, "Sampling temperature (0.0-2.0)")
+	flags.IntVar(&opts.MaxTokens, "max-tokens", 0, "Maximum tokens in response (0 = provider default)")
+	flags.Float32Var(&opts.TopP, "top-p", 0, "Top-p (nucleus) sampling (0 = provider default)")
 	flags.BoolVar(&opts.ListModels, "list-models", false, "List available models")
 	flags.StringVarP(&opts.SystemPrompt, "system", "s", "", "System prompt to set the assistant's behavior")
 	flags.IntVar(&opts.MaxHistory, "max-history", 20, "Maximum conversation history to keep (0 = unlimited)")
@@ -54,13 +56,13 @@ func addCommonFlags(cmd *cobra.Command, opts *ChatOptions) {
 	flags.StringVar(&opts.SessionName, "session", "", "Custom session name")
 	flags.StringVar(&opts.ContinueID, "continue", "", "Continue an existing session by ID")
 
-	cmd.RegisterFlagCompletionFunc("preset", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmd.RegisterFlagCompletionFunc("preset", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"creative", "concise", "code"}, cobra.ShellCompDirectiveNoFileComp
 	})
-	cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"text", "json"}, cobra.ShellCompDirectiveNoFileComp
 	})
-	cmd.RegisterFlagCompletionFunc("continue", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmd.RegisterFlagCompletionFunc("continue", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		sessions, _ := session.List()
 		ids := make([]string, len(sessions))
 		for i, s := range sessions {
@@ -108,7 +110,7 @@ func newProviderCommand(providerType provider.ProviderType, defaultModel string)
 	cmd.Flags().StringVarP(&opts.Model, "model", "m", defaultModel, "Model to use")
 	cmd.Flags().StringVarP(&opts.ProviderURL, "url", "u", provider.DefaultURL(providerType), "Provider API URL")
 
-	cmd.RegisterFlagCompletionFunc("model", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	_ = cmd.RegisterFlagCompletionFunc("model", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		p, err := provider.New(providerType, opts.ProviderURL)
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveNoFileComp

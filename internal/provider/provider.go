@@ -18,9 +18,12 @@ type Message struct {
 }
 
 // CompletionOptions configures a completion request.
+// Zero values for MaxTokens and TopP mean "use provider default".
 type CompletionOptions struct {
 	Model       string
 	Temperature float32
+	MaxTokens   int     // 0 = provider default
+	TopP        float32 // 0 = provider default
 }
 
 // ModelInfo describes an available model.

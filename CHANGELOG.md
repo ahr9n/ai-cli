@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.0
+
+### Added
+- `--max-tokens` flag to limit response length
+- `--top-p` flag for nucleus sampling control
+- Friendly network error messages (connection refused, DNS failure)
+- Integration tests with mock SSE server (6 end-to-end tests)
+- `CONTRIBUTING.md` with architecture guide and provider addition instructions
+- `.golangci.yml` lint configuration
+
+### Changed
+- Provider interface frozen: `CompletionOptions` now includes `MaxTokens` and `TopP`
+- `api.BaseClient` produces user-readable errors for common network failures
+
 ## v0.5.0
 
 ### Added

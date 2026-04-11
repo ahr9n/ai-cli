@@ -14,7 +14,7 @@ type Renderer struct {
 	isTerminal bool
 }
 
-// New creates a Renderer. Glamour is only initialised when stdout is a TTY.
+// New creates a Renderer. Glamour is only initialized when stdout is a TTY.
 func New() *Renderer {
 	isTerm := term.IsTerminal(int(os.Stdout.Fd()))
 	r := &Renderer{isTerminal: isTerm}
