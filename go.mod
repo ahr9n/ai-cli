@@ -2,8 +2,6 @@ module github.com/ahr9n/ai-cli
 
 go 1.24.0
 
-toolchain go1.25.6
-
 require (
 	github.com/charmbracelet/glamour v1.0.0
 	github.com/spf13/cobra v1.8.1
