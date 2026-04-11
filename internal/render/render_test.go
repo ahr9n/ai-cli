@@ -1,6 +1,7 @@
 package render
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/charmbracelet/glamour"
@@ -30,11 +31,10 @@ func TestRenderBlockWithGlamour(t *testing.T) {
 	if got == input {
 		t.Error("expected glamour to transform the markdown")
 	}
-	// Should still contain the meaningful text.
-	if !containsSubstring(got, "Heading") {
+	if !strings.Contains(got, "Heading") {
 		t.Errorf("rendered output missing 'Heading': %q", got)
 	}
-	if !containsSubstring(got, "Hello world") {
+	if !strings.Contains(got, "Hello world") {
 		t.Errorf("rendered output missing 'Hello world': %q", got)
 	}
 }
@@ -69,17 +69,4 @@ func newTestRenderer() *Renderer {
 		r.glamour = tr
 	}
 	return r
-}
-
-func containsSubstring(s, sub string) bool {
-	return len(s) >= len(sub) && searchSubstring(s, sub)
-}
-
-func searchSubstring(s, sub string) bool {
-	for i := 0; i <= len(s)-len(sub); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
 }

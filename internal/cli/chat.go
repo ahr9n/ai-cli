@@ -11,7 +11,6 @@ import (
 
 	"github.com/ahr9n/ai-cli/internal/loader"
 	"github.com/ahr9n/ai-cli/internal/provider"
-	"github.com/ahr9n/ai-cli/internal/render"
 )
 
 // readStdin reads all data from r if it is not a terminal (i.e. piped input).
@@ -75,7 +74,6 @@ func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt str
 	}
 	defer l.Stop()
 
-	r := render.New()
 	var buf strings.Builder
 	var printed bool
 
@@ -100,17 +98,7 @@ func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt str
 	}
 
 	if printed {
-		if r.IsTerminal() && buf.Len() > 0 {
-			// Clear raw streaming output, reprint with Glamour rendering.
-			lines := strings.Count(buf.String(), "\n") + 1
-			for i := 0; i < lines; i++ {
-				fmt.Print("\033[A\033[2K")
-			}
-			fmt.Print("\r")
-			fmt.Println(r.RenderBlock(buf.String()))
-		} else {
-			fmt.Println()
-		}
+		fmt.Println()
 	}
 	return nil
 }
@@ -125,8 +113,6 @@ func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOpti
 	if opts.MaxHistory > 0 {
 		fmt.Printf("Message history limit: %d messages\n", opts.MaxHistory)
 	}
-
-	r := render.New()
 
 	var messages []provider.Message
 	if opts.SystemPrompt != "" {
@@ -192,24 +178,11 @@ func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOpti
 			continue
 		}
 
-		raw := response.String()
-		if r.IsTerminal() && raw != "" {
-			// Clear raw streaming output, reprint rendered.
-			lines := strings.Count(raw, "\n") + 1
-			// +1 for the "Assistant: " prefix line.
-			lines++
-			for i := 0; i < lines; i++ {
-				fmt.Print("\033[A\033[2K")
-			}
-			fmt.Print("\r")
-			fmt.Printf("\nAssistant: %s\n", r.RenderBlock(raw))
-		} else {
-			fmt.Println()
-		}
+		fmt.Println()
 
 		messages = append(messages, provider.Message{
 			Role:    provider.RoleAssistant,
-			Content: raw,
+			Content: response.String(),
 		})
 
 		if opts.MaxHistory > 0 && len(messages) > opts.MaxHistory {
