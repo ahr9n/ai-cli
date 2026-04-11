@@ -18,6 +18,9 @@ type ChatOptions struct {
 	MaxHistory   int
 	PresetPrompt string
 	Output       string // "text" or "json"
+	NoSave       bool   // disable auto-save in interactive mode
+	SessionName  string // custom session name (instead of auto-generated ID)
+	ContinueID   string // resume an existing session
 }
 
 func NewRootCommand() *cobra.Command {
@@ -36,6 +39,7 @@ Supports both single prompt and interactive conversations.`,
 		listProvidersCommand(),
 		newDefaultCommand(),
 		completionCommand(),
+		newChatCommand(),
 	)
 
 	for _, info := range provider.All() {

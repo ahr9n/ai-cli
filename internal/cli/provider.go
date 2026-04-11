@@ -9,6 +9,7 @@ import (
 
 	"github.com/ahr9n/ai-cli/internal/config"
 	"github.com/ahr9n/ai-cli/internal/provider"
+	"github.com/ahr9n/ai-cli/internal/session"
 	"github.com/spf13/cobra"
 
 	// Register providers via init().
@@ -49,12 +50,23 @@ func addCommonFlags(cmd *cobra.Command, opts *ChatOptions) {
 	flags.IntVar(&opts.MaxHistory, "max-history", 20, "Maximum conversation history to keep (0 = unlimited)")
 	flags.StringVarP(&opts.PresetPrompt, "preset", "p", "", "Use a preset system prompt (creative, concise, code)")
 	flags.StringVarP(&opts.Output, "output", "o", "text", "Output format (text, json)")
+	flags.BoolVar(&opts.NoSave, "no-save", false, "Disable auto-save in interactive mode")
+	flags.StringVar(&opts.SessionName, "session", "", "Custom session name")
+	flags.StringVar(&opts.ContinueID, "continue", "", "Continue an existing session by ID")
 
 	cmd.RegisterFlagCompletionFunc("preset", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"creative", "concise", "code"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"text", "json"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	cmd.RegisterFlagCompletionFunc("continue", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		sessions, _ := session.List()
+		ids := make([]string, len(sessions))
+		for i, s := range sessions {
+			ids[i] = fmt.Sprintf("%s\t%s", s.ID, s.Title)
+		}
+		return ids, cobra.ShellCompDirectiveNoFileComp
 	})
 }
 
