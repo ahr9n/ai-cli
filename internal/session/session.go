@@ -20,13 +20,14 @@ import (
 
 // Metadata describes a saved session.
 type Metadata struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Provider  string    `json:"provider"`
-	Model     string    `json:"model"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Messages  int       `json:"messages"`
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	Provider     string    `json:"provider"`      // registry key: "ollama"
+	ProviderName string    `json:"provider_name"` // display name: "Ollama"
+	Model        string    `json:"model"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Messages     int       `json:"messages"`
 }
 
 // Session holds metadata and the full message history.

@@ -19,13 +19,14 @@ func seedSession(t *testing.T) {
 	t.Helper()
 	sess := &session.Session{
 		Meta: session.Metadata{
-			ID:        "abc12345",
-			Title:     "Test conversation",
-			Provider:  "ollama",
-			Model:     "deepseek-r1:1.5b",
-			CreatedAt: time.Date(2026, 4, 11, 12, 0, 0, 0, time.UTC),
-			UpdatedAt: time.Date(2026, 4, 11, 12, 5, 0, 0, time.UTC),
-			Messages:  2,
+			ID:           "abc12345",
+			Title:        "Test conversation",
+			Provider:     "ollama",
+			ProviderName: "Ollama",
+			Model:        "deepseek-r1:1.5b",
+			CreatedAt:    time.Date(2026, 4, 11, 12, 0, 0, 0, time.UTC),
+			UpdatedAt:    time.Date(2026, 4, 11, 12, 5, 0, 0, time.UTC),
+			Messages:     2,
 		},
 		Messages: []provider.Message{
 			{Role: provider.RoleUser, Content: "Hello"},

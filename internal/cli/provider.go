@@ -99,6 +99,7 @@ func newProviderCommand(providerType provider.ProviderType, defaultModel string)
 			if err := resolveSystemPrompt(opts); err != nil {
 				return err
 			}
+			opts.ProviderType = providerType
 			return runChat(cmd.Context(), p, opts, args)
 		},
 	}

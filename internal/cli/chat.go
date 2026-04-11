@@ -127,11 +127,12 @@ func runInteractiveMode(ctx context.Context, p provider.Provider, opts *ChatOpti
 		}
 		sess = &session.Session{
 			Meta: session.Metadata{
-				ID:        id,
-				Provider:  p.Name(),
-				Model:     opts.Model,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
+				ID:           id,
+				Provider:     string(opts.ProviderType),
+				ProviderName: p.Name(),
+				Model:        opts.Model,
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
 			},
 		}
 	}

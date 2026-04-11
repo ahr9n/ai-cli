@@ -17,10 +17,11 @@ type ChatOptions struct {
 	SystemPrompt string
 	MaxHistory   int
 	PresetPrompt string
-	Output       string // "text" or "json"
-	NoSave       bool   // disable auto-save in interactive mode
-	SessionName  string // custom session name (instead of auto-generated ID)
-	ContinueID   string // resume an existing session
+	Output       string                // "text" or "json"
+	NoSave       bool                  // disable auto-save in interactive mode
+	SessionName  string                // custom session name (instead of auto-generated ID)
+	ContinueID   string                // resume an existing session
+	ProviderType provider.ProviderType // registry key, set by newProviderCommand
 }
 
 func NewRootCommand() *cobra.Command {

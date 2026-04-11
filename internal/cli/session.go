@@ -71,7 +71,11 @@ func chatShowCommand() *cobra.Command {
 			}
 
 			fmt.Printf("Session: %s\n", sess.Meta.ID)
-			fmt.Printf("Provider: %s | Model: %s\n", sess.Meta.Provider, sess.Meta.Model)
+			providerDisplay := sess.Meta.ProviderName
+			if providerDisplay == "" {
+				providerDisplay = sess.Meta.Provider
+			}
+			fmt.Printf("Provider: %s | Model: %s\n", providerDisplay, sess.Meta.Model)
 			fmt.Printf("Created: %s | Updated: %s\n",
 				sess.Meta.CreatedAt.Format("2006-01-02 15:04"),
 				sess.Meta.UpdatedAt.Format("2006-01-02 15:04"),
@@ -169,7 +173,11 @@ func chatExportCommand() *cobra.Command {
 
 func exportMarkdown(sess *session.Session) error {
 	fmt.Printf("# %s\n\n", sess.Meta.Title)
-	fmt.Printf("**Provider:** %s | **Model:** %s\n\n", sess.Meta.Provider, sess.Meta.Model)
+	providerDisplay := sess.Meta.ProviderName
+	if providerDisplay == "" {
+		providerDisplay = sess.Meta.Provider
+	}
+	fmt.Printf("**Provider:** %s | **Model:** %s\n\n", providerDisplay, sess.Meta.Model)
 	fmt.Println("---")
 	fmt.Println()
 
