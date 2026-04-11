@@ -7,12 +7,16 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/ahr9n/ai-cli/internal/config"
 	"github.com/ahr9n/ai-cli/internal/provider"
 	"github.com/spf13/cobra"
 
 	// Register providers via init().
+	_ "github.com/ahr9n/ai-cli/internal/provider/custom"
+	_ "github.com/ahr9n/ai-cli/internal/provider/groq"
 	_ "github.com/ahr9n/ai-cli/internal/provider/localai"
 	_ "github.com/ahr9n/ai-cli/internal/provider/ollama"
+	_ "github.com/ahr9n/ai-cli/internal/provider/openai"
 )
 
 func listProvidersCommand() *cobra.Command {
@@ -53,6 +57,18 @@ func newProviderCommand(providerType provider.ProviderType, defaultModel string)
 		Use:   string(providerType) + " [prompt]",
 		Short: fmt.Sprintf("Use %s provider", providerType),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Merge saved config when user hasn't explicitly set flags.
+			if cfg, err := config.Load(); err == nil {
+				if pc, ok := cfg.Providers[string(providerType)]; ok {
+					if !cmd.Flags().Changed("model") && pc.Model != "" {
+						opts.Model = pc.Model
+					}
+					if !cmd.Flags().Changed("url") && pc.BaseURL != "" {
+						opts.ProviderURL = pc.BaseURL
+					}
+				}
+			}
+
 			p, err := provider.New(providerType, opts.ProviderURL)
 			if err != nil {
 				return err

@@ -164,6 +164,43 @@ func TestCheckStatusDrainsBody(t *testing.T) {
 	}
 }
 
+func TestWithHeaderInjection(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer my-key" {
+			t.Errorf("Authorization = %q, want %q", got, "Bearer my-key")
+		}
+		if got := r.Header.Get("X-Custom"); got != "custom-value" {
+			t.Errorf("X-Custom = %q, want %q", got, "custom-value")
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := NewBaseClient(srv.URL,
+		WithHeader("Authorization", "Bearer my-key"),
+		WithHeader("X-Custom", "custom-value"),
+	)
+
+	resp, err := c.DoGet(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("DoGet failed: %v", err)
+	}
+	resp.Body.Close()
+
+	resp, err = c.DoPost(context.Background(), "test", map[string]string{})
+	if err != nil {
+		t.Fatalf("DoPost failed: %v", err)
+	}
+	resp.Body.Close()
+}
+
+func TestWithHeaderSkipsEmpty(t *testing.T) {
+	c := NewBaseClient("http://unused", WithHeader("X-Key", ""))
+	if _, ok := c.headers["X-Key"]; ok {
+		t.Error("WithHeader should skip empty values")
+	}
+}
+
 func TestDoPostContextCancellation(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -30,3 +30,4 @@ Thumbs.db
 # Project-specific files
 .env
 *.log
+ai-cli

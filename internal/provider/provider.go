@@ -47,6 +47,9 @@ type ProviderType string
 const (
 	Ollama  ProviderType = "ollama"
 	LocalAI ProviderType = "localai"
+	OpenAI  ProviderType = "openai"
+	Groq    ProviderType = "groq"
+	Custom  ProviderType = "custom"
 )
 
 // ProviderInfo describes an available provider.

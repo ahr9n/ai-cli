@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -11,17 +12,43 @@ import (
 	"github.com/ahr9n/ai-cli/internal/provider"
 )
 
+// readStdin reads all data from r if it is not a terminal (i.e. piped input).
+// Returns empty string when r is a terminal or on read error.
+func readStdin(r *os.File) string {
+	info, err := r.Stat()
+	if err != nil {
+		return ""
+	}
+	if info.Mode()&os.ModeCharDevice != 0 {
+		return "" // interactive terminal, not a pipe
+	}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
 func runChat(ctx context.Context, p provider.Provider, opts *ChatOptions, args []string) error {
 	if opts.Interactive {
 		return runInteractiveMode(ctx, p, opts)
 	}
 
-	if len(args) == 0 {
+	piped := readStdin(os.Stdin)
+	prompt := strings.Join(args, " ")
+
+	switch {
+	case prompt != "" && piped != "":
+		prompt = prompt + "\n\n" + piped
+	case piped != "":
+		prompt = piped
+	}
+
+	if prompt == "" {
 		return fmt.Errorf("please provide a prompt or use -i for interactive mode")
 	}
 
-	userPrompt := strings.Join(args, " ")
-	return handleSinglePrompt(ctx, p, userPrompt, opts)
+	return handleSinglePrompt(ctx, p, prompt, opts)
 }
 
 func handleSinglePrompt(ctx context.Context, p provider.Provider, userPrompt string, opts *ChatOptions) error {
