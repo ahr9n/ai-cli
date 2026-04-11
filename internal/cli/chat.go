@@ -217,6 +217,8 @@ func runInteractiveWithSession(ctx context.Context, p provider.Provider, opts *C
 		err := p.StreamCompletion(ctx, messages, &provider.CompletionOptions{
 			Model:       opts.Model,
 			Temperature: opts.Temperature,
+			MaxTokens:   opts.MaxTokens,
+			TopP:        opts.TopP,
 		}, func(chunk string) {
 			if response.Len() == 0 {
 				l.Stop()
