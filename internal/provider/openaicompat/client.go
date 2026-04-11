@@ -15,6 +15,8 @@ import (
 )
 
 // Client implements provider.Provider for any OpenAI-compatible API.
+// The base URL must include the version prefix (e.g. ".../v1").
+// Paths like "chat/completions" and "models" are appended without a leading slash.
 type Client struct {
 	base *api.BaseClient
 	name string
@@ -127,20 +129,9 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 
 		var streamResp streamingResponse
 		if err := json.Unmarshal([]byte(line), &streamResp); err != nil {
-			var response completionResponse
-			if err := json.Unmarshal([]byte(line), &response); err != nil {
-				parseFailures++
-				if parseFailures > 5 {
-					return fmt.Errorf("too many parse failures in stream, last line: %q", line)
-				}
-				continue
-			}
-			parseFailures = 0
-			if len(response.Choices) > 0 {
-				content := response.Choices[0].Message.Content
-				if content != "" {
-					onResponse(content)
-				}
+			parseFailures++
+			if parseFailures > 5 {
+				return fmt.Errorf("too many parse failures in stream, last line: %q", line)
 			}
 			continue
 		}
@@ -150,6 +141,16 @@ func (c *Client) StreamCompletion(ctx context.Context, messages []provider.Messa
 			content := streamResp.Choices[0].Delta.Content
 			if content != "" {
 				onResponse(content)
+				continue
+			}
+			// Delta was empty — try non-streaming (message) format.
+			// Go's json.Unmarshal silently ignores unknown fields, so both
+			// structs parse from the same JSON without error.
+			var compResp completionResponse
+			if err := json.Unmarshal([]byte(line), &compResp); err == nil && len(compResp.Choices) > 0 {
+				if msg := compResp.Choices[0].Message.Content; msg != "" {
+					onResponse(msg)
+				}
 			}
 		}
 	}

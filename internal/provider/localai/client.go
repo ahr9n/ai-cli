@@ -24,5 +24,7 @@ func NewClient(baseURL string) *Client {
 	return &Client{Client: openaicompat.NewClient(baseURL, "")}
 }
 
-func (c *Client) Name() string        { return "LocalAI" }
-func (c *Client) Description() string { return "Self-hosted AI model server compatible with OpenAI's API" }
+func (c *Client) Name() string { return "LocalAI" }
+func (c *Client) Description() string {
+	return "Self-hosted AI model server compatible with OpenAI's API"
+}

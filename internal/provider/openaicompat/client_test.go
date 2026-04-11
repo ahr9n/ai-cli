@@ -211,6 +211,29 @@ func TestWithInfo(t *testing.T) {
 	}
 }
 
+func TestNonStreamingFallback(t *testing.T) {
+	body := `data: {"choices":[{"message":{"content":"hello"}}]}` + "\n\n" +
+		"data: [DONE]\n\n"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprint(w, body)
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "")
+	var got strings.Builder
+	msgs := []provider.Message{{Role: provider.RoleUser, Content: "hi"}}
+	err := c.StreamCompletion(context.Background(), msgs, &provider.CompletionOptions{Model: "test"}, func(chunk string) {
+		got.WriteString(chunk)
+	})
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if got.String() != "hello" {
+		t.Errorf("got %q, want %q", got.String(), "hello")
+	}
+}
+
 func TestCreateCompletion(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
