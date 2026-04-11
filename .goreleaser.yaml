@@ -1,0 +1,53 @@
+version: 2
+project_name: ai-cli
+
+before:
+  hooks:
+    - go mod tidy
+    - go test -race ./...
+
+builds:
+  - main: ./cmd/ai-cli
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/ahr9n/ai-cli/internal/cli.Version={{.Version}}
+
+archives:
+  - formats: ['tar.gz']
+    format_overrides:
+      - goos: windows
+        formats: ['zip']
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+brews:
+  - repository:
+      owner: ahr9n
+      name: homebrew-tap
+    homepage: "https://github.com/ahr9n/ai-cli"
+    description: "A CLI tool to interact with various AI models"
+    license: "MIT"
+    install: |
+      bin.install "ai-cli"
+    test: |
+      system "#{bin}/ai-cli", "version"
