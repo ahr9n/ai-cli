@@ -13,6 +13,9 @@ func TestNewReturnsLoader(t *testing.T) {
 	if l.stopped {
 		t.Error("new loader should not be stopped")
 	}
+	if l.started {
+		t.Error("new loader should not be started")
+	}
 }
 
 func TestStopWithoutStart(t *testing.T) {

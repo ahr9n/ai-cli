@@ -23,7 +23,9 @@ var Dots = SpinnerStyle{
 
 type Loader struct {
 	stop    chan struct{}
+	done    chan struct{} // closed when goroutine exits
 	stopped bool
+	started bool // true only if goroutine launched
 	mu      sync.Mutex
 	style   SpinnerStyle
 }
@@ -31,6 +33,7 @@ type Loader struct {
 func New(style SpinnerStyle) *Loader {
 	return &Loader{
 		stop:  make(chan struct{}),
+		done:  make(chan struct{}),
 		style: style,
 	}
 }
@@ -43,7 +46,7 @@ func (l *Loader) SetMessage(message string) {
 
 func (l *Loader) Start() {
 	if fi, err := os.Stderr.Stat(); err != nil || fi.Mode()&os.ModeCharDevice == 0 {
-		return // skip spinner when stderr is not a terminal
+		return
 	}
 
 	l.mu.Lock()
@@ -51,11 +54,13 @@ func (l *Loader) Start() {
 		l.mu.Unlock()
 		return
 	}
+	l.started = true
 	l.mu.Unlock()
 
 	resetColor := "\033[0m"
 
 	go func() {
+		defer close(l.done)
 		ticker := time.NewTicker(l.style.Speed)
 		defer ticker.Stop()
 
@@ -89,7 +94,11 @@ func (l *Loader) Stop() {
 	if !l.stopped {
 		l.stopped = true
 		close(l.stop)
+		started := l.started
 		l.mu.Unlock()
+		if started {
+			<-l.done // wait for goroutine to fully exit
+		}
 		fmt.Fprint(os.Stderr, "\r\033[K")
 		return
 	}

@@ -16,7 +16,8 @@ clean:
 	go clean
 
 install: build
-	cp bin/ai-cli $(GOPATH)/bin/ai-cli
+	install -d $(HOME)/go/bin
+	install bin/ai-cli $(HOME)/go/bin/ai-cli
 
 format:
 	go fmt ./...
