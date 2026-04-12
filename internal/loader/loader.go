@@ -15,7 +15,7 @@ type SpinnerStyle struct {
 }
 
 var Dots = SpinnerStyle{
-	Frames:  []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"},
+	Frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
 	Speed:   100 * time.Millisecond,
 	Message: "Thinking",
 	Color:   "\033[32m",
