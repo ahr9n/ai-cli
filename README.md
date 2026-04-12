@@ -9,7 +9,7 @@
   </p>
 </div>
 
-[![demo](https://asciinema.org/a/uUOFVezOecXNJyGS.svg)](https://asciinema.org/a/uUOFVezOecXNJyGS)
+![demo](demo.gif)
 
 ---
 
